@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>운천고등학교 - 급식, 시간표, 날씨</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans KR', 'Roboto', sans-serif;
+      background: linear-gradient(145deg, #f0f7ff 0%, #ffffff 100%);
+      margin: 0;
+      color: #1e3a8a;
+      min-height: 100vh;
+      transition: background 0.5s ease, color 0.5s ease;
+      overflow-x: hidden;
+    }
+    body.dark-mode {
+      background: linear-gradient(145deg, #1e3a8a 0%, #2d3748 100%);
+      color: #f8fafc;
+    }
+    .header {
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 20px 32px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header.dark-mode {
+      background: rgba(30, 58, 138, 0.98);
+      color: #f8fafc;
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-logo img {
+      height: 40px;
+      width: auto;
+      transition: transform 0.3s ease;
+    }
+    .header-logo img:hover {
+      transform: scale(1.1);
+    }
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      letter-spacing: -0.5px;
+      transition: color 0.3s ease;
+    }
+    .header.dark-mode h1 {
+      color: #d4af37;
+    }
+    .header-controls {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .search-bar {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-bar input {
+      padding: 12px 48px 12px 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      background: rgba(255, 255, 255, 0.9);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+      width: 220px;
+    }
+    .search-bar input:focus {
+      outline: none;
+      border-color: #1e3a8a;
+      box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.2);
+      transform: scale(1.02);
+    }
+    .search-bar i {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6b7280;
+      transition: color 0.3s ease;
+    }
+    .search-bar .spinner {
+      display: none;
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      color: #1e3a8a;
+    }
+    .search-bar.searching .spinner {
+      display: block;
+    }
+    .search-bar.searching i {
+      display: none;
+    }
+    .notification-bell {
+      position: relative;
+      cursor: pointer;
+      font-size: 1.4rem;
+      color: #1e3a8a;
+      transition: color 0.3s ease, transform 0.2s ease;
+    }
+    .notification-bell:hover {
+      color: #d4af37;
+      transform: scale(1.1);
+    }
+    .notification-bell .badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #dc2626;
+      color: white;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      padding: 4px 8px;
+      font-weight: 600;
+      transition: transform 0.3s ease;
+    }
+    .notification-bell:hover .badge {
+      transform: scale(1.2);
+    }
+    .theme-toggle {
+      background: #1e3a8a;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .theme-toggle:hover {
+      background: #2563eb;
+      transform: scale(1.05);
+    }
+    .dark-mode .theme-toggle {
+      background: #d4af37;
+      color: #1e3a8a;
+    }
+    .dark-mode .theme-toggle:hover {
+      background: #e4c767;
+    }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px;
+      display: grid;
+      gap: 28px;
+      grid-template-columns: 1fr 300px;
+    }
+    .main-content {
+      display: grid;
+      gap: 28px;
+    }
+    .sidebar {
+      background: rgba(248, 250, 252, 0.95);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .dark-mode .sidebar {
+      background: rgba(45, 55, 72, 0.95);
+    }
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .sidebar-header h3 {
+      margin: 0;
+      font-size: 1.3rem;
+      color: #1e3a8a;
+      transition: color 0.3s ease;
+    }
+    .dark-mode .sidebar-header h3 {
+      color: #d4af37;
+    }
+    .sidebar-toggle {
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: #6b7280;
+      transition: color 0.3s ease, transform 0.3s ease;
+    }
+    .sidebar-toggle:hover {
+      color: #1e3a8a;
+      transform: rotate(90deg);
+    }
+    .dark-mode .sidebar-toggle:hover {
+      color: #d4af37;
+    }
+    .sidebar-toggle.active i {
+      transform: rotate(180deg);
+    }
+    .sidebar-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, opacity 0.4s ease;
+    }
+    .sidebar-content.active {
+      max-height: 500px;
+      opacity: 1;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar li {
+      margin: 12px 0;
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .sidebar-content.active li {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .sidebar li:nth-child(1) { transition-delay: 0.1s; }
+    .sidebar li:nth-child(2) { transition-delay: 0.2s; }
+    .sidebar li:nth-child(3) { transition-delay: 0.3s; }
+    .sidebar li:nth-child(4) { transition-delay: 0.4s; }
+    .sidebar li:nth-child(5) { transition-delay: 0.5s; }
+    .sidebar li:nth-child(6) { transition-delay: 0.6s; }
+    .sidebar li:nth-child(7) { transition-delay: 0.7s; }
+    .sidebar a {
+      color: #1e3a8a;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 0.3s ease, padding-left 0.3s ease;
+    }
+    .dark-mode .sidebar a {
+      color: #f8fafc;
+    }
+    .sidebar a:hover {
+      color: #d4af37;
+      padding-left: 8px;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      padding: 24px;
+      opacity: 0;
+      transform: translateY(50px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+    }
+    .card.main-feature {
+      background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%);
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    .card.main-feature::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, #1e3a8a, #d4af37, #34d399, #1e3a8a);
+      background-size: 300%;
+      opacity: 0.1;
+      z-index: -1;
+      animation: gradientFlow 12s ease infinite;
+    }
+    .dark-mode .card {
+      background: rgba(45, 55, 72, 0.95);
+      color: #f8fafc;
+    }
+    .dark-mode .card.main-feature::before {
+      opacity: 0.2;
+    }
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .card h2 {
+      margin: 0 0 16px;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: color 0.3s ease;
+    }
+    .card.main-feature h2 {
+      color: #d4af37;
+    }
+    .dark-mode .card h2 {
+      color: #f8fafc;
+    }
+    .dark-mode .card.main-feature h2 {
+      color: #d4af37;
+    }
+    ul {
+      padding-left: 20px;
+      margin: 0;
+      line-height: 1.8;
+      font-size: 0.95rem;
+    }
+    select, button, input[type="date"], input[type="text"], textarea {
+      padding: 12px 16px;
+      margin: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      background: rgba(255, 255, 255, 0.9);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+    }
+    .dark-mode select, .dark-mode button, .dark-mode input[type="date"], .dark-mode input[type="text"], .dark-mode textarea {
+      background: rgba(45, 55, 72, 0.9);
+      color: #f8fafc;
+      border-color: #4b5563;
+    }
+    select:focus, button:focus, input[type="date"]:focus, input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: #1e3a8a;
+      box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.25);
+      transform: scale(1.02);
+    }
+    button {
+      background: #1e3a8a;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 12px;
+      font-weight: 600;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    button:hover {
+      background: #2563eb;
+      transform: scale(1.05);
+    }
+    .dark-mode button {
+      background: #d4af37;
+      color: #1e3a8a;
+    }
+    .dark-mode button:hover {
+      background: #e4c767;
+    }
+    .loading {
+      color: #6b7280;
+      font-style: italic;
+      font-size: 0.9rem;
+    }
+    .dark-mode .loading {
+      color: #9ca3af;
+    }
+    .week-selector, .weekday-buttons {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .weekday-buttons button {
+      background: #e5e7eb;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 20px;
+      cursor: pointer;
+      color: #1e3a8a;
+      font-weight: 600;
+      transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease;
+    }
+    .weekday-buttons button:hover {
+      transform: scale(1.05);
+    }
+    .dark-mode .weekday-buttons button {
+      background: #4b5563;
+      color: #f8fafc;
+    }
+    .weekday-buttons button.active {
+      background: #1e3a8a;
+      color: white;
+    }
+    .dark-mode .weekday-buttons button.active {
+      background: #d4af37;
+      color: #1e3a8a;
+    }
+    #weatherInfo {
+      font-size: 1.1rem;
+      margin-top: 12px;
+      color: #1e3a8a;
+      font-weight: 500;
+      transition: opacity 0.5s ease;
+    }
+    .dark-mode #weatherInfo {
+      color: #93c5fd;
+    }
+    .date-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    label {
+      font-weight: 600;
+      color: #4b5563;
+      transition: color 0.3s ease;
+    }
+    .dark-mode label {
+      color: #d1d5db;
+    }
+    .timetable-day {
+      margin-top: 14px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+    .dark-mode .timetable-day {
+      background: rgba(75, 85, 99, 0.85);
+    }
+    .timetable-day-header {
+      background: #1e3a8a;
+      color: white;
+      padding: 12px 16px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .dark-mode .timetable-day-header {
+      background: #d4af37;
+      color: #1e3a8a;
+    }
+    .timetable-day-header:hover {
+      background: #2563eb;
+      transform: scale(1.01);
+    }
+    .dark-mode .timetable-day-header:hover {
+      background: #e4c767;
+    }
+    .timetable-day-content {
+      padding: 14px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+    .timetable-day-content.active {
+      max-height: 600px;
+      opacity: 1;
+    }
+    .timetable-day-content ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+    .timetable-day-content p {
+      margin: 0;
+      color: #6b7280;
+      transition: color 0.3s ease;
+    }
+    .dark-mode .timetable-day-content p {
+      color: #9ca3af;
+    }
+    .school-info {
+      background: rgba(248, 250, 252, 0.9);
+      border-left: 4px solid #60a5fa;
+      padding: 18px;
+      border-radius: 10px;
+      margin-top: 14px;
+      color: #2d3748;
+      font-size: 0.95rem;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .dark-mode .school-info {
+      background: rgba(75, 85, 99, 0.9);
+      color: #d1d5db;
+    }
+    .school-info p {
+      margin: 8px 0;
+    }
+    .school-info a {
+      color: #1e3a8a;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+    .school-info a:hover {
+      color: #d4af37;
+    }
+    .dark-mode .school-info a {
+      color: #93c5fd;
+    }
+    .school-map {
+      margin-top: 16px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+      aspect-ratio: 16 / 9;
+      max-width: 100%;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .school-map iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .calendar-container {
+      margin-top: 16px;
+    }
+    #calendar {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+      transition: opacity 0.5s ease;
+    }
+    .dark-mode #calendar {
+      background: rgba(45, 55, 72, 0.95);
+    }
+    .event-ticker {
+      background: #fef3c7;
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 16px;
+      font-size: 0.95rem;
+      color: #1e3a8a;
+      overflow: hidden;
+      position: relative;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .dark-mode .event-ticker {
+      background: #4b5563;
+      color: #f8fafc;
+    }
+    .event-ticker span {
+      display: inline-block;
+      white-space: nowrap;
+      animation: ticker 20s linear infinite;
+    }
+    @keyframes ticker {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    .feedback-form textarea {
+      width: 100%;
+      min-height: 100px;
+      resize: vertical;
+      transition: transform 0.2s ease;
+    }
+    .feedback-form textarea:focus {
+      transform: scale(1.02);
+    }
+    .feedback-form button {
+      margin-top: 12px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 600px;
+      width: 90%;
+      position: relative;
+      animation: slideIn 0.4s ease;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .dark-mode .modal-content {
+      background: rgba(45, 55, 72, 0.98);
+      color: #f8fafc;
+    }
+    .modal-content h3 {
+      margin-top: 0;
+      color: #1e3a8a;
+      font-size: 1.4rem;
+      transition: color 0.3s ease;
+    }
+    .dark-mode .modal-content h3 {
+      color: #d4af37;
+    }
+    .close-modal {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: #6b7280;
+      transition: color 0.3s ease, transform 0.2s ease;
+    }
+    .dark-mode .close-modal {
+      color: #d1d5db;
+    }
+    .close-modal:hover {
+      color: #1e3a8a;
+      transform: rotate(90deg);
+    }
+    .dark-mode .close-modal:hover {
+      color: #d4af37;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .footer {
+      background: #1e3a8a;
+      color: white;
+      padding: 32px;
+      margin-top: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      transition: opacity 0.5s ease;
+    }
+    .dark-mode .footer {
+      background: #2d3748;
+    }
+    .footer a {
+      color: #93c5fd;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease, padding-left 0.3s ease;
+    }
+    .footer a:hover {
+      color: #d4af37;
+      padding-left: 8px;
+    }
+    .footer-links ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      gap: 20px;
+    }
+    .footer-contact p {
+      margin: 4px 0;
+      font-size: 0.9rem;
+    }
+    .background-orbs {
+      position: fixed;
+      top: -150px;
+      left: -150px;
+      width: 400vw;
+      height: 400vh;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.08;
+      filter: blur(90px);
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+    }
+    .orb1 {
+      background: #60a5fa;
+      width: 500px; height: 500px;
+      top: 10vh; left: 15vw;
+      animation-name: float1;
+      animation-duration: 28s;
+    }
+    .orb2 {
+      background: #d4af37;
+      width: 550px; height: 550px;
+      top: 50vh; left: 65vw;
+      animation-name: float2;
+      animation-duration: 32s;
+    }
+    .orb3 {
+      background: #34d399;
+      width: 450px; height: 450px;
+      top: 85vh; left: 80vw;
+      animation-name: float3;
+      animation-duration: 36s;
+    }
+    @keyframes float1 {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(90px) translateX(70px); }
+    }
+    @keyframes float2 {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(-80px) translateX(-80px); }
+    }
+    @keyframes float3 {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(80px) translateX(-60px); }
+    }
+    @media (max-width: 1024px) {
+      .container {
+        grid-template-columns: 1fr;
+        padding: 24px;
+      }
+      .sidebar {
+        position: static;
+        margin-top: 24px;
+      }
+    }
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+        gap: 20px;
+      }
+      h1 {
+        font-size: 1.8rem;
+      }
+      .card {
+        padding: 20px;
+      }
+      .card h2 {
+        font-size: 1.4rem;
+      }
+      select, button, input[type="date"], input[type="text"], textarea {
+        padding: 10px 14px;
+        font-size: 0.9rem;
+      }
+      .header {
+        padding: 16px 20px;
+      }
+      .header-controls {
+        gap: 10px;
+      }
+      .header-controls .search-bar input {
+        width: 180px;
+      }
+      .footer {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-logo">
+      <img src="https://i.namu.wiki/i/-fO6R8PJNGy8GJYPu2pozTBt4A-l5w_j16i5iKSscu7MK_oorcApqVUvsTyF_wAdEGHtO83zXu7Jy2vyCuamXg.webp" alt="운천고등학교 로고" />
+      <h1>운천고등학교</h1>
+    </div>
+    <div class="header-controls">
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="급식(YYYY-MM-DD) 또는 일정 검색..." aria-label="검색" />
+        <i class="fas fa-search"></i>
+        <i class="fas fa-spinner fa-spin spinner"></i>
+      </div>
+      <div class="notification-bell" onclick="openNotifications()" aria-label="알림 열기">
+        <i class="fas fa-bell"></i>
+        <span class="badge" id="notificationBadge">0</span>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()">다크 모드</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="main-content">
+      <div class="card" id="school-info">
+        <h2><i class="fas fa-school"></i> 학교 정보 & 지도</h2>
+        <div class="school-info">
+          <p><strong>학교명:</strong> 운천고등학교</p>
+          <p><strong>주소:</strong> 경기도 오산시 운천로 193</p>
+          <p><strong>전화번호:</strong> 031-371-9900</p>
+          <p><strong>홈페이지:</strong> <a href="https://uncheon-h.goehs.kr" target="_blank" rel="noopener noreferrer">uncheon-h.goehs.kr</a></p>
+          <p><strong>교육 목표:</strong> 창의적이고 도덕적인 인재 양성, 지역사회와 함께 성장하는 학교</p>
+        </div>
+        <div class="school-map" aria-label="운천고등학교 위치 지도">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3164.742173798391!2d127.07538481531244!3d37.14436067988866!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357b70e75f79b847%3A0x22dcd1d4bb3db8e3!2z7J6Q7ISc7J2Y7IucIOyVhOyEnOyCrOyaqA!5e0!3m2!1sko!2skr!4v1688999999999!5m2!1sko!2skr"
+            allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="운천고등학교 지도"
+          ></iframe>
+        </div>
+      </div>
+      <div class="card" id="weather">
+        <h2><i class="fas fa-cloud-sun"></i> 오늘의 날씨 (경기도 오산)</h2>
+        <div id="weatherInfo" class="loading">날씨 정보를 불러오는 중입니다...</div>
+      </div>
+      <div class="card main-feature" id="meal">
+        <h2><i class="fas fa-utensils"></i> 급식 정보</h2>
+        <div class="date-nav">
+          <button onclick="changeDate('mealDate', -1)" aria-label="이전 날짜"><i class="fas fa-chevron-left"></i></button>
+          <input type="date" id="mealDate" onchange="loadMeal()" aria-label="급식 날짜 선택" />
+          <button onclick="changeDate('mealDate', 1)" aria-label="다음 날짜"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div id="mealInfo" class="loading">날짜를 선택하면 급식이 표시됩니다.</div>
+      </div>
+      <div class="card main-feature" id="timetable">
+        <h2><i class="fas fa-calendar-alt"></i> 시간표 정보</h2>
+        <div class="week-selector">
+          <label for="month">월:</label>
+          <select id="month" aria-label="월 선택"></select>
+          <label for="week">주차:</label>
+          <select id="week" aria-label="주차 선택">
+            <option value="1">1주차</option>
+            <option value="2">2주차</option>
+            <option value="3">3주차</option>
+            <option value="4">4주차</option>
+            <option value="5">5주차</option>
+          </select>
+          <label for="grade">학년:</label>
+          <select id="grade" aria-label="학년 선택">
+            <option value="1">1학년</option>
+            <option value="2">2학년</option>
+            <option value="3">3학년</option>
+          </select>
+          <label for="class">반:</label>
+          <select id="class" aria-label="반 선택">
+            <option value="1">1반</option>
+            <option value="2">2반</option>
+            <option value="3">3반</option>
+            <option value="4">4반</option>
+            <option value="5">5반</option>
+            <option value="6">6반</option>
+            <option value="7">7반</option>
+            <option value="8">8반</option>
+            <option value="9">9반</option>
+            <option value="10">10반</option>
+          </select>
+        </div>
+        <div class="weekday-buttons" id="weekdayButtons"></div>
+        <div id="timetableInfo" class="loading">월과 주차를 선택하고 요일을 선택하세요.</div>
+      </div>
+      <div class="card main-feature" id="calendar">
+        <h2><i class="fas fa-calendar"></i> 학교 일정</h2>
+        <div class="calendar-container">
+          <div id="calendar"></div>
+        </div>
+        <div class="event-ticker">
+          <span id="eventTicker">최신 학교 일정: 로딩 중...</span>
+        </div>
+      </div>
+      <div class="card" id="resources">
+        <h2><i class="fas fa-book"></i> 학생 자원</h2>
+        <ul>
+          <li><a href="https://ebsi.co.kr" target="_blank" rel="noopener noreferrer">EBSi 학습 자료</a></li>
+          <li><a href="https://uncheon-h.goehs.kr" target="_blank" rel="noopener noreferrer">학교 양식 다운로드</a></li>
+          <li><a href="https://www.moe.go.kr" target="_blank" rel="noopener noreferrer">교육부 공식 사이트</a></li>
+        </ul>
+      </div>
+      <div class="card" id="feedback">
+        <h2><i class="fas fa-comment-dots"></i> 학생 피드백</h2>
+        <div class="feedback-form">
+          <textarea id="feedbackText" placeholder="학교에 대한 피드백을 입력하세요..." aria-label="학생 피드백 입력"></textarea>
+          <button onclick="submitFeedback()">피드백 제출</button>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar" id="sidebarDesktop">
+      <div class="sidebar-header">
+        <h3>빠른 링크</h3>
+        <div class="sidebar-toggle" onclick="toggleSidebarContentDesktop()" aria-label="빠른 링크 토글">
+          <i class="fas fa-chevron-down"></i>
+        </div>
+      </div>
+      <div class="sidebar-content active">
+        <ul>
+          <li><a href="#school-info">학교 정보 & 지도</a></li>
+          <li><a href="#weather">오늘의 날씨</a></li>
+          <li><a href="#meal">급식 정보</a></li>
+          <li><a href="#timetable">시간표 정보</a></li>
+          <li><a href="#calendar">학교 일정</a></li>
+          <li><a href="#resources">학생 자원</a></li>
+          <li><a href="#feedback">학생 피드백</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="footer-links">
+      <ul>
+        <li><a href="#calendar">학교 일정</a></li>
+        <li><a href="https://uncheon-h.goehs.kr" target="_blank" rel="noopener noreferrer">학교 홈페이지</a></li>
+      </ul>
+    </div>
+    <div class="footer-contact">
+      <p>운천고등학교 | 경기도 오산시 운천로 193</p>
+      <p>전화: 031-371-9900 | 이메일: contact@uncheon-h.goehs.kr</p>
+      <p>© 2025 운천고등학교. All rights reserved.</p>
+    </div>
+  </div>
+  <div class="modal" id="notificationModal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeNotifications()" aria-label="알림 닫기">×</span>
+      <h3>이번 달 특수 일정</h3>
+      <div id="notificationContent"></div>
+    </div>
+  </div>
+  <div class="background-orbs">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+  <script>
+    const apiKey = "6306ea0370c4439894f5a644ed6c5d79";
+    const ATPT_OFCDC_SC_CODE = "J10";
+    const SD_SCHUL_CODE = "7530572";
+    let notifications = [];
+    let searchTimeout;
+
+    function changeDate(inputId, deltaDays) {
+      const input = document.getElementById(inputId);
+      const currentDate = input.value ? new Date(input.value) : new Date();
+      currentDate.setDate(currentDate.getDate() + deltaDays);
+      input.valueAsDate = currentDate;
+      loadMeal();
+    }
+
+    async function loadMeal() {
+      const input = document.getElementById("mealDate");
+      const target = document.getElementById("mealInfo");
+      if (!input.value) {
+        target.textContent = "날짜를 선택하세요.";
+        return;
+      }
+      const ymd = input.value.replace(/-/g, "");
+      const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${apiKey}&Type=json&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&MLSV_YMD=${ymd}`;
+      target.textContent = "불러오는 중...";
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
+        if (
+          json.mealServiceDietInfo &&
+          json.mealServiceDietInfo[1] &&
+          json.mealServiceDietInfo[1].row.length > 0
+        ) {
+          const dish = json.mealServiceDietInfo[1].row[0].DDISH_NM;
+          const items = dish
+            .replace(/\([0-9.]*\)/g, "")
+            .split("<br/>")
+            .map(i => i.trim())
+            .filter(Boolean);
+          const milkImg = ' <img src="https://cdn-icons-png.flaticon.com/512/2626/2626933.png" alt="우유" style="height:18px;vertical-align:middle;margin-left:5px;">';
+          let listHtml = items.map(item => {
+            if(item.includes('우유')) {
+              return `<li>${item}${milkImg}</li>`;
+            } else {
+              return `<li>${item}</li>`;
+            }
+          }).join("");
+          target.innerHTML = `<ul>${listHtml}</ul>`;
+        } else {
+          target.textContent = "해당 날짜에 급식 정보가 없습니다.";
+        }
+      } catch (e) {
+        target.textContent = "📛 급식 정보를 불러올 수 없습니다.";
+        console.error(e);
+      }
+    }
+
+    function populateMonthOptions() {
+      const monthSelect = document.getElementById("month");
+      monthSelect.innerHTML = "";
+      for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement("option");
+        opt.value = m;
+        opt.textContent = `${m}월`;
+        monthSelect.appendChild(opt);
+      }
+    }
+
+    function getDatesOfWeek(year, month, week) {
+      const firstDayOfMonth = new Date(year, month - 1, 1);
+      const firstDayWeekday = firstDayOfMonth.getDay();
+      const offsetToMonday = (firstDayWeekday === 0) ? 1 : (8 - firstDayWeekday);
+      const firstMonday = new Date(year, month - 1, 1 + offsetToMonday);
+      const weekStartDate = new Date(firstMonday);
+      weekStartDate.setDate(firstMonday.getDate() + (week - 1) * 7);
+      const dates = [];
+      for (let i = 0; i < 5; i++) {
+        const d = new Date(weekStartDate);
+        d.setDate(weekStartDate.getDate() + i);
+        dates.push(d);
+      }
+      return dates;
+    }
+
+    function renderWeekdayButtons() {
+      const month = parseInt(document.getElementById("month").value);
+      const week = parseInt(document.getElementById("week").value);
+      const container = document.getElementById("weekdayButtons");
+      container.innerHTML = "";
+      if (!month || !week) {
+        document.getElementById("timetableInfo").innerHTML = "<p class='loading'>월과 주차를 선택하세요.</p>";
+        return;
+      }
+      const year = new Date().getFullYear();
+      const dates = getDatesOfWeek(year, month, week);
+      const dayMap = ["월", "화", "수", "목", "금"];
+      dates.forEach((date, i) => {
+        const btn = document.createElement("button");
+        btn.textContent = dayMap[i];
+        btn.title = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')} (${dayMap[i]}요일)`;
+        btn.setAttribute("aria-label", `${dayMap[i]}요일 시간표 보기`);
+        btn.onclick = () => {
+          document
+            .querySelectorAll(".weekday-buttons button")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          const grade = document.getElementById("grade").value;
+          const classNum = document.getElementById("class").value;
+          loadSingleDayTimetable(year, month, week, i, grade, classNum);
+        };
+        container.appendChild(btn);
+      });
+      document.getElementById("timetableInfo").innerHTML = "<p class='loading'>요일을 선택하세요.</p>";
+      const firstBtn = container.querySelector("button");
+      if (firstBtn) firstBtn.click();
+    }
+
+    async function loadSingleDayTimetable(year, month, week, weekdayIndex, grade, classNum) {
+      const target = document.getElementById("timetableInfo");
+      target.innerHTML = "<p class='loading'>불러오는 중...</p>";
+      const dates = getDatesOfWeek(year, month, week);
+      const date = dates[weekdayIndex];
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      const ymd = `${yyyy}${mm}${dd}`;
+      const url = `https://open.neis.go.kr/hub/hisTimetable?KEY=${apiKey}&Type=json&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&GRADE=${grade}&CLASS_NM=${classNum}&ALL_TI_YMD=${ymd}`;
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
+        const dayMap = ["월", "화", "수", "목", "금"];
+        let html = `
+          <div class="timetable-day">
+            <div class="timetable-day-header" onclick="toggleTimetableDay(this)" tabindex="0" role="button" aria-expanded="true">
+              ${dayMap[weekdayIndex]} (${yyyy}-${mm}-${dd}) <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="timetable-day-content active">
+        `;
+        if (
+          json.hisTimetable &&
+          json.hisTimetable[1] &&
+          json.hisTimetable[1].row.length > 0
+        ) {
+          const rows = json.hisTimetable[1].row;
+          const list = rows
+            .sort((a, b) => a.PERIO - b.PERIO)
+            .map((r) => `<li>${r.PERIO}교시: ${r.ITRT_CNTNT}</li>`)
+            .join("");
+          html += `<ul>${list}</ul>`;
+        } else {
+          html += "<p>해당 날짜에 시간표 정보가 없습니다.</p>";
+        }
+        html += `</div></div>`;
+        target.innerHTML = html;
+      } catch (e) {
+        target.innerHTML = "<p class='loading'>📛 시간표 정보를 불러올 수 없습니다.</p>";
+        console.error(e);
+      }
+    }
+
+    function toggleTimetableDay(header) {
+      const content = header.nextElementSibling;
+      content.classList.toggle("active");
+      const icon = header.querySelector("i");
+      icon.classList.toggle("fa-chevron-down");
+      icon.classList.toggle("fa-chevron-up");
+      header.setAttribute("aria-expanded", content.classList.contains("active"));
+    }
+
+    async function loadCalendarEvents(year, month, week) {
+      const calendarEl = document.getElementById("calendar");
+      const tickerEl = document.getElementById("eventTicker");
+      const now = new Date();
+      const currentYear = year || now.getFullYear();
+      const currentMonth = month || now.getMonth() + 1;
+      const firstDay = new Date(currentYear, currentMonth - 1, 1);
+      const lastDay = new Date(currentYear, currentMonth, 0);
+      const startYmd = firstDay.toISOString().slice(0, 10).replace(/-/g, "");
+      const endYmd = lastDay.toISOString().slice(0, 10).replace(/-/g, "");
+      const url = `https://open.neis.go.kr/hub/SchoolSchedule?KEY=${apiKey}&Type=json&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&AA_FROM_YMD=${startYmd}&AA_TO_YMD=${endYmd}`;
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
+        let events = [];
+        if (json.SchoolSchedule && json.SchoolSchedule[1] && json.SchoolSchedule[1].row.length > 0) {
+          events = json.SchoolSchedule[1].row.map(r => ({
+            title: r.EVENT_NM,
+            start: `${r.AA_YMD.slice(0,4)}-${r.AA_YMD.slice(4,6)}-${r.AA_YMD.slice(6)}`,
+            color: '#1e3a8a'
+          }));
+          const tickerText = json.SchoolSchedule[1].row
+            .map(r => `${r.AA_YMD.slice(0,4)}-${r.AA_YMD.slice(4,6)}-${r.AA_YMD.slice(6)}: ${r.EVENT_NM}`)
+            .join(" | ");
+          tickerEl.textContent = tickerText || "최신 학교 일정: 없음";
+          notifications = json.SchoolSchedule[1].row.map(r => ({
+            date: `${r.AA_YMD.slice(0,4)}-${r.AA_YMD.slice(4,6)}-${r.AA_YMD.slice(6)}`,
+            event: r.EVENT_NM
+          }));
+          updateNotifications();
+        } else {
+          tickerEl.textContent = "최신 학교 일정: 없음";
+          notifications = [];
+          updateNotifications();
+        }
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'dayGridMonth',
+          locale: 'ko',
+          height: 'auto',
+          events: events,
+          eventDisplay: 'block',
+          headerToolbar: {
+            left: 'prev,next',
+            center: 'title',
+            right: ''
+          },
+          titleFormat: { year: 'numeric', month: 'long' }
+        });
+        calendar.render();
+      } catch (e) {
+        tickerEl.textContent = "📛 일정 정보를 불러올 수 없습니다.";
+        notifications = [];
+        updateNotifications();
+        console.error(e);
+      }
+    }
+
+    async function loadWeather() {
+      const target = document.getElementById("weatherInfo");
+      target.innerHTML = "<p class='loading'>날씨 정보를 불러오는 중입니다...</p>";
+      try {
+        const lat = 37.1443;
+        const lon = 127.0775;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=Asia/Seoul`;
+        const res = await fetch(url);
+        const json = await res.json();
+        if (json.current_weather) {
+          const w = json.current_weather;
+          const desc = mapWeatherCode(w.weathercode);
+          const temp = w.temperature.toFixed(1);
+          target.textContent = `현재 날씨: ${desc}, 온도: ${temp}°C, 풍속: ${w.windspeed}km/h`;
+        } else {
+          target.textContent = "날씨 정보를 가져올 수 없습니다.";
+        }
+      } catch (e) {
+        target.innerHTML = "<p class='loading'>📛 날씨 정보를 불러올 수 없습니다.</p>";
+        console.error(e);
+      }
+    }
+
+    function mapWeatherCode(code) {
+      const map = {
+        0: "맑음",
+        1: "주로 맑음",
+        2: "부분적으로 구름 많음",
+        3: "흐림",
+        45: "안개",
+        48: "안개",
+        51: "약한 이슬비",
+        53: "중간 이슬비",
+        55: "강한 이슬비",
+        56: "약한 얼음 이슬비",
+        57: "강한 얼음 이슬비",
+        61: "약한 비",
+        63: "중간 비",
+        65: "강한 비",
+        66: "약한 얼음 비",
+        67: "강한 얼음 비",
+        71: "약한 눈",
+        73: "중간 눈",
+        75: "강한 눈",
+        77: "눈 알갱이",
+        80: "약한 소나기 비",
+        81: "중간 소나기 비",
+        82: "강한 소나기 비",
+        85: "약한 소나기 눈",
+        86: "강한 소나기 눈",
+        95: "천둥번개",
+        96: "약한 천둥번개와 소나기 비",
+        99: "강한 천둥번개와 소나기 비",
+      };
+      return map[code] || "알 수 없는 날씨";
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark-mode");
+      document.querySelector(".header").classList.toggle("dark-mode");
+      const isDark = document.body.classList.contains("dark-mode");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+      document.querySelectorAll(".theme-toggle").forEach(btn => {
+        btn.textContent = isDark ? "라이트 모드" : "다크 모드";
+      });
+    }
+
+    function toggleSidebarContentDesktop() {
+      const content = document.querySelector("#sidebarDesktop .sidebar-content");
+      const toggle = document.querySelector("#sidebarDesktop .sidebar-toggle i");
+      content.classList.toggle("active");
+      toggle.classList.toggle("fa-chevron-down");
+      toggle.classList.toggle("fa-chevron-up");
+      toggle.parentElement.setAttribute("aria-label", content.classList.contains("active") ? "빠른 링크 닫기" : "빠른 링크 열기");
+    }
+
+    function openNotifications() {
+      const modal = document.getElementById("notificationModal");
+      const content = document.getElementById("notificationContent");
+      if (notifications.length > 0) {
+        content.innerHTML = `<ul>${notifications.map(n => `<li>${n.date}: ${n.event}</li>`).join("")}</ul>`;
+      } else {
+        content.innerHTML = "<p>이번 달에 특수 일정이 없습니다.</p>";
+      }
+      modal.style.display = "flex";
+    }
+
+    function closeNotifications() {
+      document.getElementById("notificationModal").style.display = "none";
+    }
+
+    function updateNotifications() {
+      const badge = document.getElementById("notificationBadge");
+      const count = notifications.length;
+      badge.textContent = count;
+      badge.style.display = count > 0 ? "inline" : "none";
+    }
+
+    async function searchContent(query) {
+      if (!query) return;
+      const searchBar = document.querySelector(".search-bar");
+      searchBar.classList.add("searching");
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(async () => {
+        const dateMatch = query.match(/^\d{4}-\d{2}-\d{2}$/);
+        if (dateMatch) {
+          document.getElementById("mealDate").value = query;
+          await loadMeal();
+          scrollToSection("#meal");
+        } else {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = now.getMonth() + 1;
+          const firstDay = new Date(year, month - 1, 1);
+          const lastDay = new Date(year, month, 0);
+          const startYmd = firstDay.toISOString().slice(0, 10).replace(/-/g, "");
+          const endYmd = lastDay.toISOString().slice(0, 10).replace(/-/g, "");
+          const url = `https://open.neis.go.kr/hub/SchoolSchedule?KEY=${apiKey}&Type=json&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&AA_FROM_YMD=${startYmd}&AA_TO_YMD=${endYmd}`;
+          try {
+            const res = await fetch(url);
+            const json = await res.json();
+            if (json.SchoolSchedule && json.SchoolSchedule[1] && json.SchoolSchedule[1].row.length > 0) {
+              const rows = json.SchoolSchedule[1].row.filter(r => r.EVENT_NM.toLowerCase().includes(query.toLowerCase()));
+              if (rows.length > 0) {
+                notifications = rows.map(r => ({
+                  date: `${r.AA_YMD.slice(0,4)}-${r.AA_YMD.slice(4,6)}-${r.AA_YMD.slice(6)}`,
+                  event: r.EVENT_NM
+                }));
+                updateNotifications();
+                scrollToSection("#calendar");
+              } else {
+                notifications = [];
+                updateNotifications();
+              }
+            } else {
+              notifications = [];
+              updateNotifications();
+            }
+          } catch (e) {
+            notifications = [];
+            updateNotifications();
+            console.error(e);
+          }
+        }
+        searchBar.classList.remove("searching");
+      }, 500);
+    }
+
+    function submitFeedback() {
+      const feedback = document.getElementById("feedbackText").value;
+      if (feedback.trim()) {
+        alert("피드백이 제출되었습니다. 감사합니다!");
+        document.getElementById("feedbackText").value = "";
+      } else {
+        alert("피드백을 입력해주세요.");
+      }
+    }
+
+    function scrollToSection(selector) {
+      const element = document.querySelector(selector);
+      if (element) {
+        window.scrollTo({
+          top: element.offsetTop - 80,
+          behavior: 'smooth'
+        });
+        element.classList.add('highlight');
+        setTimeout(() => element.classList.remove('highlight'), 1000);
+      }
+    }
+
+    function handleScrollAnimations() {
+      const cards = document.querySelectorAll('.card, .school-info, .school-map, .event-ticker');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      cards.forEach(card => observer.observe(card));
+    }
+
+    function addChangeListeners() {
+      ["month", "week", "grade", "class"].forEach((id) => {
+        document.getElementById(id).addEventListener("change", () => {
+          renderWeekdayButtons();
+        });
+      });
+      document.getElementById("searchInput").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") searchContent(e.target.value);
+      });
+      document.querySelectorAll('.sidebar a').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = link.getAttribute('href');
+          scrollToSection(target);
+        });
+      });
+    }
+
+    function loadPreferences() {
+      const theme = localStorage.getItem("theme") || "light";
+      if (theme === "dark") {
+        document.body.classList.add("dark-mode");
+        document.querySelector(".header").classList.toggle("dark-mode");
+        document.querySelectorAll(".theme-toggle").forEach(btn => {
+          btn.textContent = "라이트 모드";
+        });
+      }
+      const savedGrade = localStorage.getItem("grade") || "1";
+      const savedClass = localStorage.getItem("class") || "1";
+      document.getElementById("grade").value = savedGrade;
+      document.getElementById("class").value = savedClass;
+    }
+
+    function savePreferences() {
+      const grade = document.getElementById("grade").value;
+      const classNum = document.getElementById("class").value;
+      localStorage.setItem("grade", grade);
+      localStorage.setItem("class", classNum);
+    }
+
+    function init() {
+      const now = new Date();
+      populateMonthOptions();
+      document.getElementById("month").value = now.getMonth() + 1;
+      document.getElementById("week").value = 1;
+      loadPreferences();
+      document.getElementById("mealDate").valueAsDate = now;
+      addChangeListeners();
+      renderWeekdayButtons();
+      loadMeal();
+      loadWeather();
+      loadCalendarEvents(now.getFullYear(), now.getMonth() + 1);
+      handleScrollAnimations();
+      document.getElementById("grade").addEventListener("change", savePreferences);
+      document.getElementById("class").addEventListener("change", savePreferences);
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

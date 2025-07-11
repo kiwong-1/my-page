@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>기웅네비 - ㅋㅋㅋ)</title>
+    <title>기웅네비 - 기웅이 다운 네비게이션</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* CSS는 이전과 동일하므로 생략합니다. 원본 코드를 그대로 사용하세요. */
         * {
             margin: 0;
             padding: 0;
@@ -29,17 +28,29 @@
 
         .main-container {
             display: flex;
+            flex-direction: row; /* Desktop: Sidebar on left, Map on right */
             height: 100vh;
             overflow: hidden;
         }
 
+        .map-container {
+            flex: 1; /* Map takes remaining space horizontally */
+            height: 100%; /* Map takes full height on desktop */
+            position: relative; /* For map controls */
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
         .sidebar {
-            width: 450px;
+            width: 380px; /* Fixed width for sidebar on desktop */
+            height: 100%;
             background: white;
-            box-shadow: 2px 0 20px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 20px rgba(0,0,0,0.1); /* Shadow for separation */
             overflow-y: auto;
             z-index: 1000;
-            position: relative;
             transition: background-color 0.3s;
         }
 
@@ -48,14 +59,8 @@
             color: #e0e0e0;
         }
         
-        .map-container {
-            flex: 1;
-            position: relative;
-        }
-
-        #map {
-            width: 100%;
-            height: 100%;
+        .resizer {
+            display: none; /* Hide resizer on desktop by default */
         }
 
         .header {
@@ -433,64 +438,82 @@
         .settings-section { margin-bottom: 20px; }
         .setting-label { font-size: 13px; }
         
+        /* --- Mobile Specific Design (Map on top, resizable) --- */
         @media (max-width: 768px) {
-            .main-container { flex-direction: column; }
-            .sidebar { 
-                width: 100%; 
-                height: 55vh; /* Give a bit more space to sidebar */
-                min-height: 350px; /* Prevent it from becoming too small */
-            }
-            .map-container { 
-                height: 45vh; /* Adjust map height accordingly */
+            .main-container {
+                flex-direction: column; /* Mobile: Map on top, sidebar below */
             }
 
-            /* Adjust header font size */
+            .map-container {
+                height: 45vh; /* Initial smaller map height for mobile */
+                min-height: 200px;
+                width: auto; /* Reset width to auto for column layout */
+                flex-shrink: 0;
+            }
+
+            .sidebar {
+                flex: 1; /* Sidebar takes remaining vertical space */
+                height: 55vh; /* Initial sidebar height for mobile */
+                min-height: 350px;
+                width: auto; /* Reset width to auto for column layout */
+                box-shadow: 0 -2px 20px rgba(0,0,0,0.1); /* Adjust shadow for bottom */
+            }
+
+            .resizer {
+                display: block; /* Show resizer on mobile */
+                height: 8px; /* Resizer height */
+                background: #e0e0e0;
+                cursor: ns-resize;
+                z-index: 1001;
+                transition: background-color 0.3s;
+            }
+            body.dark-mode .resizer {
+                background: #47476b;
+            }
+            .resizer:hover {
+                background: #667eea;
+            }
+            body.dark-mode .resizer:hover {
+                background: #8a9aff;
+            }
+
+            /* Mobile specific map enlarged class */
+            .map-enlarged .map-container {
+                height: 70vh !important; /* Enlarge map after search */
+            }
+            .map-enlarged .sidebar {
+                height: 30vh !important; /* Shrink sidebar */
+            }
+
+            /* General mobile adjustments from previous turn */
             .header h1 { font-size: 1.5em; }
             .header p { font-size: 0.8em; }
-
-            /* Tab font size */
             .nav-tab { font-size: 12px; padding: 12px; }
-
-            /* Input fields */
             .input-group input { padding: 10px 35px 10px 10px; font-size: 13px; }
             .input-group label { font-size: 12px; margin-bottom: 5px; }
             .input-icon { right: 8px; }
             .swap-btn { right: -15px; width: 30px; height: 30px; font-size: 14px; }
-
-            /* Transport modes and route options grid layout */
             .transport-modes, .route-options, .nearby-categories { 
-                grid-template-columns: repeat(2, 1fr); /* Change to 2 columns on mobile */
-                gap: 8px; /* Slightly reduce gap */
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
             }
             .transport-mode, .route-option, .nearby-category { 
                 font-size: 11px; 
-                padding: 10px 5px; /* Adjust padding */
+                padding: 10px 5px;
             }
             .transport-mode i { font-size: 18px; margin-bottom: 3px; }
-
-            /* Search button */
             .search-btn { padding: 12px; font-size: 14px; }
-
-            /* Quick locations */
             .location-tag { font-size: 10px; padding: 5px 10px; }
-
-            /* Route summary */
             .route-summary { grid-template-columns: repeat(1, 1fr); gap: 8px; padding: 10px; }
             .summary-item .value { font-size: 16px; }
             .summary-item .label { font-size: 11px; }
-
-            /* Directions steps */
             .direction-step { padding: 8px 5px; }
             .step-number { width: 22px; height: 22px; font-size: 11px; margin-right: 8px; }
             .step-instruction { font-size: 12px; }
             .step-distance { font-size: 10px; }
-
-            /* Modals */
             .modal-content { width: 95%; padding: 20px; }
             .modal-list-item { padding: 10px; font-size: 13px; }
             .modal-close-btn { padding: 8px 12px; font-size: 13px; }
-
-            /* Destination select modal buttons */
             .destination-select-modal .modal-buttons { flex-direction: column; }
             .destination-select-modal .modal-buttons button { width: 100%; padding: 12px; font-size: 14px; }
         }
@@ -626,7 +649,7 @@
         <div class="sidebar">
             <div class="header">
                 <h1><i class="fas fa-map-marked-alt"></i>기웅네비</h1>
-                <p>기웅이 다운 네비게이션 서비스</p>
+                <p>기웅이다운 네비게이션 서비스</p>
             </div>
 
             <div class="nav-tabs">
@@ -752,6 +775,7 @@
                 </div>
             </div>
         </div>
+        <div class="resizer" id="resizer"></div>
         <div class="map-container">
             <div id="map"></div>
             <div class="map-controls">
@@ -1003,6 +1027,7 @@
             }
             
             selectAlternative(0);
+            enlargeMap(); // Enlarge map after search results are displayed (only affects mobile due to CSS media query)
         }
 
         function selectAlternative(index) {
@@ -1190,6 +1215,12 @@
                     favoriteMarkers = []; 
                     nearbyMarkers = [];
 
+                    // Shrink map if not on route tab (only applies on mobile due to CSS media query)
+                    if (tab.dataset.tab !== 'route') {
+                        document.querySelector('.main-container').classList.remove('map-enlarged');
+                        map.invalidateSize();
+                    }
+
                     if (tab.dataset.tab === 'favorites') loadFavorites();
                     if (tab.dataset.tab === 'history') loadHistory();
                     if (tab.dataset.tab === 'nearby') document.getElementById('nearby-results').innerHTML = '';
@@ -1203,6 +1234,50 @@
                     el.classList.add('active');
                 });
             });
+
+            // Resizer functionality (only active when resizer is visible on mobile)
+            const resizer = document.getElementById('resizer');
+            const mapContainer = document.querySelector('.map-container');
+            const sidebar = document.querySelector('.sidebar');
+            let isResizing = false;
+
+            resizer.addEventListener('mousedown', (e) => {
+                // Only enable resizing if the resizer is visible (i.e., on mobile)
+                if (window.getComputedStyle(resizer).display === 'none') return;
+
+                isResizing = true;
+                document.body.style.cursor = 'ns-resize';
+                map.dragging.disable(); // Disable map dragging during resize
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+            });
+
+            function handleMouseMove(e) {
+                if (!isResizing) return;
+                const mainContainer = document.querySelector('.main-container');
+                const containerHeight = mainContainer.offsetHeight;
+                const newMapHeight = e.clientY - mainContainer.offsetTop; // Calculate Y relative to main-container
+                const newSidebarHeight = containerHeight - newMapHeight - resizer.offsetHeight;
+
+                // Ensure min/max heights are respected
+                const mapMinHeight = parseFloat(window.getComputedStyle(mapContainer).minHeight);
+                const sidebarMinHeight = parseFloat(window.getComputedStyle(sidebar).minHeight);
+
+                // Prevent map from going above/below container bounds
+                if (newMapHeight >= mapMinHeight && newSidebarHeight >= sidebarMinHeight && newMapHeight <= containerHeight - resizer.offsetHeight - sidebarMinHeight) {
+                    mapContainer.style.height = `${newMapHeight}px`;
+                    sidebar.style.height = `${newSidebarHeight}px`;
+                    map.invalidateSize(); // Update map size
+                }
+            }
+
+            function handleMouseUp() {
+                isResizing = false;
+                document.body.style.cursor = 'default';
+                map.dragging.enable(); // Re-enable map dragging
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            }
         });
 
         const fetchWeather = async (lat, lon) => {
@@ -1375,6 +1450,12 @@
              document.querySelector('.nav-tab[data-tab="route"]').click();
              document.getElementById('to').value = name;
              // Do not call searchRoute directly here. User should click search button.
+        }
+
+        // Function to enlarge map after search (only affects mobile due to CSS media query)
+        function enlargeMap() {
+            document.querySelector('.main-container').classList.add('map-enlarged');
+            map.invalidateSize(); // Update map size after resize
         }
     </script>
 </body>

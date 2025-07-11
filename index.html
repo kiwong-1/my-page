@@ -1,26 +1,1578 @@
+```html
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Display Happy Image</title>
+    <title>NaviPro - 스마트 네비게이션</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css">
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        * {
             margin: 0;
-            background-color: #f0f0f0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        img {
-            max-width: 80%;
-            max-height: 80%;
-            object-fit: contain;
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .main-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 450px;
+            background: white;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            z-index: 1000;
+            position: relative;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .search-section {
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            cursor: pointer;
+        }
+
+        .swap-btn {
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .swap-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .transport-modes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .transport-mode {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+
+        .transport-mode:hover {
+            border-color: #667eea;
+            background: white;
+        }
+
+        .transport-mode.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .transport-mode i {
+            font-size: 20px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .route-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .route-option {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+
+        .route-option.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .route-option i {
+            margin-right: 5px;
+        }
+
+        .advanced-options {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .advanced-options h4 {
+            margin-bottom: 10px;
+            color: #667eea;
+            font-size: 14px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .checkbox-item input {
+            margin-right: 5px;
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .quick-locations {
+            margin-bottom: 20px;
+        }
+
+        .quick-locations h4 {
+            margin-bottom: 10px;
+            color: #667eea;
+            font-size: 14px;
+        }
+
+        .location-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .location-tag {
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 15px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 11px;
+        }
+
+        .location-tag:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .results-section {
+            background: white;
+            border-top: 3px solid #667eea;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .route-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .summary-item .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .summary-item .label {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .add-to-favorites {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .add-to-favorites:hover {
+            background: #5a6fd8;
+        }
+
+        .route-alternatives {
+            padding: 15px;
+        }
+
+        .route-alternative {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .route-alternative:hover {
+            border-color: #667eea;
+            background: white;
+        }
+
+        .route-alternative.active {
+            border-color: #667eea;
+            background: #e8f0fe;
+        }
+
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .route-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .route-badge {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+        }
+
+        .route-details {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .route-details span {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .directions {
+            padding: 15px;
+            background: white;
+        }
+
+        .directions h4 {
+            margin-bottom: 10px;
+            color: #667eea;
+            font-size: 14px;
+        }
+
+        .direction-step {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .direction-step:hover {
+            background: #f8f9fa;
+        }
+
+        .step-number {
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-instruction {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .step-distance {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .weather-info {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .weather-info h4 {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .weather-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .weather-temp {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .weather-desc {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .traffic-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .traffic-info h4 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .traffic-alerts {
+            font-size: 12px;
+            color: #856404;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .map-control-btn {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .map-control-btn:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .map-control-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .nearby-places {
+            margin-bottom: 20px;
+        }
+
+        .nearby-places h4 {
+            margin-bottom: 10px;
+            color: #667eea;
+            font-size: 14px;
+        }
+
+        .nearby-categories {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .nearby-category {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 11px;
+        }
+
+        .nearby-category:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            font-size: 14px;
+            color: #667eea;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .favorites-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .favorite-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .favorite-item:hover {
+            background: #f8f9fa;
+        }
+
+        .favorite-info {
+            flex: 1;
+        }
+
+        .favorite-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .favorite-address {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .favorite-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .favorite-actions button {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .favorite-actions button:hover {
+            background: #f0f0f0;
+            color: #667eea;
+        }
+
+        .add-favorite-section {
+            margin-bottom: 20px;
+        }
+
+        .add-favorite-section input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .add-favorite-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .add-favorite-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            background: #f8f9fa;
+        }
+
+        .history-info {
+            flex: 1;
+        }
+
+        .history-route {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .history-date {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .settings-section {
+            margin-bottom: 20px;
+        }
+
+        .settings-section h4 {
+            margin-bottom: 10px;
+            color: #667eea;
+            font-size: 14px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .setting-label {
+            font-size: 13px;
+            color: #333;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background: #ccc;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #667eea;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active::after {
+            left: 22px;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 50vh;
+                overflow-y: auto;
+            }
+            
+            .map-container {
+                height: 50vh;
+            }
+            
+            #map {
+                height: 100%;
+            }
+            
+            .transport-modes {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 <body>
-    <img src="happy.png" alt="Happy Image">
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="header">
+                <h1><i class="fas fa-map-marked-alt"></i> NaviPro</h1>
+                <p>전문 네비게이션 서비스</p>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="route">길찾기</button>
+                <button class="nav-tab" data-tab="nearby">주변</button>
+                <button class="nav-tab" data-tab="favorites">즐겨찾기</button>
+                <button class="nav-tab" data-tab="history">기록</button>
+                <button class="nav-tab" data-tab="settings">설정</button>
+            </div>
+
+            <div class="tab-content active" id="route-tab">
+                <div class="weather-info">
+                    <h4><i class="fas fa-cloud-sun"></i> 현재 날씨</h4>
+                    <div class="weather-details">
+                        <div>
+                            <div class="weather-temp">23°C</div>
+                            <div class="weather-desc">맑음, 습도 45%</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-sun" style="font-size: 30px;"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="traffic-info">
+                    <h4><i class="fas fa-traffic-light"></i> 교통 정보</h4>
+                    <div class="traffic-alerts">
+                        <div>• 강남대로 일부 정체 (15분 지연)</div>
+                        <div>• 올림픽대로 원활</div>
+                        <div>• 경부고속도로 서행</div>
+                    </div>
+                </div>
+
+                <div class="search-section">
+                    <div class="input-group">
+                        <label for="from">출발지</label>
+                        <input type="text" id="from" placeholder="현재 위치 또는 주소 입력">
+                        <i class="fas fa-map-marker-alt input-icon"></i>
+                    </div>
+                    <div class="input-group">
+                        <label for="to">도착지</label>
+                        <input type="text" id="to" placeholder="목적지 입력">
+                        <i class="fas fa-search input-icon"></i>
+                        <button class="swap-btn" onclick="swapLocations()">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="transport-modes">
+                    <div class="transport-mode active" data-mode="car">
+                        <i class="fas fa-car"></i>
+                        <div>자동차</div>
+                    </div>
+                    <div class="transport-mode" data-mode="walk">
+                        <i class="fas fa-walking"></i>
+                        <div>도보</div>
+                    </div>
+                    <div class="transport-mode" data-mode="bike">
+                        <i class="fas fa-bicycle"></i>
+                        <div>자전거</div>
+                    </div>
+                </div>
+
+                <div class="route-options">
+                    <div class="route-option active" data-option="fastest">
+                        <i class="fas fa-tachometer-alt"></i> 빠른 길
+                    </div>
+                    <div class="route-option" data-option="shortest">
+                        <i class="fas fa-route"></i> 짧은 길
+                    </div>
+                    <div class="route-option" data-option="eco">
+                        <i class="fas fa-leaf"></i> 경제적
+                    </div>
+                    <div class="route-option" data-option="scenic">
+                        <i class="fas fa-mountain"></i> 경치 좋은
+                    </div>
+                </div>
+
+                <div class="advanced-options">
+                    <h4><i class="fas fa-cog"></i> 상세 옵션</h4>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="avoid-tolls">
+                            <label for="avoid-tolls">유료도로 회피</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="avoid-highways">
+                            <label for="avoid-highways">고속도로 회피</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="avoid-ferries">
+                            <label for="avoid-ferries">페리 회피</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="real-time" checked>
+                            <label for="real-time">실시간 교통정보</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="search-btn" id="search-btn" onclick="searchRoute()">
+                    <i class="fas fa-search"></i> 길찾기
+                </button>
+
+                <div class="quick-locations">
+                    <h4><i class="fas fa-star"></i> 인기 목적지</h4>
+                    <div class="location-tags">
+                        <span class="location-tag" onclick="setQuickLocation('서울역')">🚉 서울역</span>
+                        <span class="location-tag" onclick="setQuickLocation('강남역')">🚇 강남역</span>
+                        <span class="location-tag" onclick="setQuickLocation('명동')">🛍️ 명동</span>
+                        <span class="location-tag" onclick="setQuickLocation('인천공항')">✈️ 인천공항</span>
+                        <span class="location-tag" onclick="setQuickLocation('부산역')">🚆 부산역</span>
+                        <span class="location-tag" onclick="setQuickLocation('제주공항')">✈️ 제주공항</span>
+                        <span class="location-tag" onclick="setQuickLocation('경복궁')">🏯 경복궁</span>
+                        <span class="location-tag" onclick="setQuickLocation('롯데월드')">🎢 롯데월드</span>
+                        <span class="location-tag" onclick="setQuickLocation('코엑스')">🏬 코엑스</span>
+                        <span class="location-tag" onclick="setQuickLocation('홍대')">🎨 홍대</span>
+                    </div>
+                </div>
+
+                <div class="results-section" id="results" style="display: none;">
+                    <div class="route-summary">
+                        <div class="summary-item">
+                            <div class="value" id="total-time">--</div>
+                            <div class="label">예상 시간</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="value" id="total-distance">--</div>
+                            <div class="label">총 거리</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="value" id="total-cost">--</div>
+                            <div class="label">예상 비용</div>
+                        </div>
+                    </div>
+
+                    <button class="add-to-favorites" onclick="addToFavorites()">즐겨찾기에 추가</button>
+
+                    <div class="route-alternatives" id="route-alternatives"></div>
+
+                    <div class="directions" id="directions">
+                        <h4><i class="fas fa-list-ol"></i> 상세 안내</h4>
+                        <div id="directions-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="nearby-tab">
+                <div class="nearby-places">
+                    <h4><i class="fas fa-map-marker-alt"></i> 주변 장소</h4>
+                    <div class="nearby-categories">
+                        <div class="nearby-category" onclick="searchNearby('restaurant')">
+                            <i class="fas fa-utensils"></i>
+                            <div>음식점</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('gas_station')">
+                            <i class="fas fa-gas-pump"></i>
+                            <div>주유소</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('hospital')">
+                            <i class="fas fa-hospital"></i>
+                            <div>병원</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('bank')">
+                            <i class="fas fa-university"></i>
+                            <div>은행</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('pharmacy')">
+                            <i class="fas fa-pills"></i>
+                            <div>약국</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('parking')">
+                            <i class="fas fa-parking"></i>
+                            <div>주차장</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('cafe')">
+                            <i class="fas fa-coffee"></i>
+                            <div>카페</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('shopping')">
+                            <i class="fas fa-shopping-cart"></i>
+                            <div>쇼핑</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('lodging')">
+                            <i class="fas fa-bed"></i>
+                            <div>숙박</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="nearby-results"></div>
+            </div>
+
+            <div class="tab-content" id="favorites-tab">
+                <div class="add-favorite-section">
+                    <input type="text" id="favorite-name" placeholder="즐겨찾기 이름">
+                    <input type="text" id="favorite-address" placeholder="주소">
+                    <button class="add-favorite-btn" onclick="addCustomFavorite()">추가</button>
+                </div>
+                <div class="favorites-list" id="favorites-list"></div>
+            </div>
+
+            <div class="tab-content" id="history-tab">
+                <div class="history-list" id="history-list">
+                    <div class="history-item">
+                        <div class="history-info">
+                            <div class="history-route">집 → 회사</div>
+                            <div class="history-date">2025-07-10</div>
+                        </div>
+                        <div class="favorite-actions">
+                            <button onclick="rerunHistory('집', '회사')"><i class="fas fa-redo"></i></button>
+                            <button onclick="deleteHistory(this)"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-info">
+                            <div class="history-route">회사 → 병원</div>
+                            <div class="history-date">2025-07-09</div>
+                        </div>
+                        <div class="favorite-actions">
+                            <button onclick="rerunHistory('회사', '병원')"><i class="fas fa-redo"></i></button>
+                            <button onclick="deleteHistory(this)"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="settings-tab">
+                <div class="settings-section">
+                    <h4><i class="fas fa-map"></i> 지도 설정</h4>
+                    <div class="setting-item">
+                        <div class="setting-label">교통 정보 표시</div>
+                        <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label">야간 모드</div>
+                        <div class="toggle-switch" onclick="toggleSetting(this)"></div>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label">실시간 업데이트</div>
+                        <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="map-controls">
+                <button class="map-control-btn" onclick="toggleMapControl(this, 'traffic')"><i class="fas fa-traffic-light"></i></button>
+                <button class="map-control-btn" onclick="toggleMapControl(this, 'satellite')"><i class="fas fa-satellite"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <script>
+        // Initialize map
+        var map = L.map('map').setView([37.5665, 126.9780], 13);
+        var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+
+        var trafficLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'); // Placeholder for traffic
+
+        map.invalidateSize();
+
+        // Tab switching
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+                if (tab.dataset.tab === 'favorites') {
+                    loadFavorites();
+                }
+            });
+        });
+
+        // Transport modes selection
+        document.querySelectorAll('.transport-mode').forEach(mode => {
+            mode.addEventListener('click', () => {
+                document.querySelectorAll('.transport-mode').forEach(m => m.classList.remove('active'));
+                mode.classList.add('active');
+            });
+        });
+
+        // Route options selection
+        document.querySelectorAll('.route-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.route-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+            });
+        });
+
+        // Swap locations
+        function swapLocations() {
+            var from = document.getElementById('from').value;
+            var to = document.getElementById('to').value;
+            document.getElementById('from').value = to;
+            document.getElementById('to').value = from;
+        }
+
+        // Set quick location
+        function setQuickLocation(loc) {
+            document.getElementById('to').value = loc;
+        }
+
+        let currentRoutes = [];
+        let currentPolylines = [];
+        let startMarker = null;
+        let endMarker = null;
+        let favoriteMarkers = [];
+        let lastTo = null;
+        let lastEnd = null;
+
+        // Function to translate English instructions to Korean
+        function translateInstruction(text) {
+            const translations = {
+                'Turn left onto': '좌회전하여',
+                'Turn right onto': '우회전하여',
+                'Turn sharp left onto': '급좌회전하여',
+                'Turn sharp right onto': '급우회전하여',
+                'Turn slight left onto': '약간 좌회전하여',
+                'Turn slight right onto': '약간 우회전하여',
+                'Continue onto': '계속하여',
+                'Head onto': '향하여',
+                'Destination will be on the left': '도착지가 왼쪽에 있습니다',
+                'Destination will be on the right': '도착지가 오른쪽에 있습니다',
+                'Arrive at destination': '도착지에 도착',
+                'Make a U-turn onto': 'U턴하여',
+                'Roundabout': '로터리',
+                'Take the': '진입',
+                'exit': '나가기',
+                'onto': '으로',
+                'Keep left': '왼쪽으로 유지',
+                'Keep right': '오른쪽으로 유지',
+                // Add more translations as needed
+            };
+
+            for (let eng in translations) {
+                text = text.replace(new RegExp(eng, 'gi'), translations[eng]);
+            }
+            return text;
+        }
+
+        async function searchRoute() {
+            const button = document.getElementById('search-btn');
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 길찾기 중..';
+
+            const fromInput = document.getElementById('from').value.trim();
+            lastTo = document.getElementById('to').value.trim();
+            if (!lastTo) {
+                alert('도착지를 입력하세요');
+                resetButton();
+                return;
+            }
+            const mode = document.querySelector('.transport-mode.active').dataset.mode;
+            const option = document.querySelector('.route-option.active').dataset.option;
+            let profile = mode;
+            let modePart;
+            if (profile === 'car') modePart = 'driving';
+            else if (profile === 'bike') modePart = 'bike';
+            else if (profile === 'walk') {
+                profile = 'foot';
+                modePart = 'foot';
+            }
+
+            let excludes = [];
+            if (document.getElementById('avoid-tolls').checked) excludes.push('toll');
+            if (document.getElementById('avoid-highways').checked) excludes.push('motorway');
+            if (document.getElementById('avoid-ferries').checked) excludes.push('ferry');
+
+            if (option === 'shortest') excludes.push('motorway');
+            else if (option === 'eco') excludes.push('toll');
+            else if (option === 'scenic') excludes = [...new Set([...excludes, 'motorway', 'toll', 'ferry'])];
+
+            const exclude = excludes.join(',');
+
+            const geocode = async (query) => {
+                if (!query) return null;
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ', Korea')}&format=json&limit=1`);
+                    const data = await res.json();
+                    return data[0] ? L.latLng(data[0].lat, data[0].lon) : null;
+                } catch (err) {
+                    alert('지오코딩 오류: ' + err.message);
+                    return null;
+                }
+            };
+
+            let start;
+            if (fromInput === '' || fromInput === '현재 위치') {
+                try {
+                    start = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(pos => resolve(L.latLng(pos.coords.latitude, pos.coords.longitude)), reject);
+                    });
+                } catch (e) {
+                    start = await geocode('Seoul');
+                }
+            } else {
+                start = await geocode(fromInput);
+            }
+
+            lastEnd = await geocode(lastTo);
+            if (!start || !lastEnd) {
+                alert('위치를 찾을 수 없습니다.');
+                resetButton();
+                return;
+            }
+
+            const dist = start.distanceTo(lastEnd) / 1000; // km
+            if (mode === 'walk' && dist > 20) {
+                alert('도보로 갈 수 없는 거리입니다.');
+                resetButton();
+                return;
+            } else if (mode === 'bike' && dist > 100) {
+                alert('자전거로 갈 수 없는 거리입니다.');
+                resetButton();
+                return;
+            }
+
+            // Remove old markers
+            if (startMarker) map.removeLayer(startMarker);
+            if (endMarker) map.removeLayer(endMarker);
+
+            // Add new markers
+            startMarker = L.marker(start, {icon: L.icon({iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png', iconSize: [25, 41], iconAnchor: [12, 41]})}).addTo(map).bindPopup('출발지');
+            endMarker = L.marker(lastEnd, {icon: L.icon({iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png', iconSize: [25, 41], iconAnchor: [12, 41]})}).addTo(map).bindPopup('도착지');
+
+            const router = new L.Routing.OSRMv1({
+                serviceUrl: `https://routing.openstreetmap.de/routed-${profile}/route/v1`,
+                profile: modePart,
+                requestParameters: exclude ? { exclude: exclude } : {},
+                useHints:false
+            });
+
+            router.route([new L.Routing.Waypoint(start), new L.Routing.Waypoint(lastEnd)], (err, routes) => {
+                resetButton();
+                if (err) {
+                    alert('경로를 찾을 수 없습니다: ' + err.message);
+                    return;
+                }
+                if (!routes || routes.length === 0) {
+                    alert('경로를 찾을 수 없습니다.');
+                    return;
+                }
+                currentRoutes = routes;
+
+                // Clear existing polylines
+                currentPolylines.forEach(poly => map.removeLayer(poly));
+                currentPolylines = [];
+
+                // Show results
+                document.getElementById('results').style.display = 'block';
+
+                // Update summary for first route
+                const summary = routes[0].summary;
+                document.getElementById('total-time').textContent = Math.round(summary.totalTime / 60) + '분';
+                document.getElementById('total-distance').textContent = (summary.totalDistance / 1000).toFixed(1) + 'km';
+                document.getElementById('total-cost').textContent = '₩' + Math.round((summary.totalDistance / 1000) * 100);
+
+                // Alternatives
+                const alternatives = document.getElementById('route-alternatives');
+                alternatives.innerHTML = '';
+                routes.forEach((route, index) => {
+                    const alt = document.createElement('div');
+                    alt.className = 'route-alternative' + (index === 0 ? ' active' : '');
+                    alt.innerHTML = `
+                        <div class="route-header">
+                            <div class="route-title">${index === 0 ? '추천 경로' : '대안 경로 ' + index}</div>
+                            <div class="route-badge">${index === 0 ? '최적' : '대안'}</div>
+                        </div>
+                        <div class="route-details">
+                            <span><i class="fas fa-clock"></i> ${Math.round(route.summary.totalTime / 60)}분</span>
+                            <span><i class="fas fa-road"></i> ${(route.summary.totalDistance / 1000).toFixed(1)}km</span>
+                            <span><i class="fas fa-won-sign"></i> ${Math.round((route.summary.totalDistance / 1000) * 100)}</span>
+                        </div>
+                    `;
+                    alt.addEventListener('click', () => selectAlternative(index));
+                    alternatives.appendChild(alt);
+                });
+
+                // Select first
+                selectAlternative(0);
+            }, null, {alternatives: true, steps: true});
+        }
+
+        function selectAlternative(index) {
+            const route = currentRoutes[index];
+            document.querySelectorAll('.route-alternative').forEach((alt, i) => {
+                alt.classList.toggle('active', i === index);
+            });
+
+            // Update summary
+            const summary = route.summary;
+            document.getElementById('total-time').textContent = Math.round(summary.totalTime / 60) + '분';
+            document.getElementById('total-distance').textContent = (summary.totalDistance / 1000).toFixed(1) + 'km';
+            document.getElementById('total-cost').textContent = '₩' + Math.round((summary.totalDistance / 1000) * 100);
+
+            // Clear previous polylines
+            currentPolylines.forEach(poly => map.removeLayer(poly));
+            currentPolylines = [];
+
+            // Add the selected route polyline
+            const polyline = L.polyline(route.coordinates, { color: 'blue', weight: 5 }).addTo(map);
+            currentPolylines.push(polyline);
+            map.fitBounds(polyline.getBounds());
+
+            // Update directions
+            const directionsList = document.getElementById('directions-list');
+            directionsList.innerHTML = '';
+            route.instructions.forEach((instruction, i) => {
+                const step = document.createElement('div');
+                step.className = 'direction-step';
+                step.innerHTML = `
+                    <div class="step-number">${i + 1}</div>
+                    <div class="step-content">
+                        <div class="step-instruction">${translateInstruction(instruction.text)}</div>
+                        <div class="step-distance">${instruction.distance} m, ${Math.round(instruction.time / 60)} 분</div>
+                    </div>
+                `;
+                directionsList.appendChild(step);
+            });
+        }
+
+        function resetButton() {
+            const button = document.getElementById('search-btn');
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-search"></i> 길찾기';
+        }
+
+        function addToFavorites() {
+            const name = prompt('즐겨찾기 이름 입력:');
+            if (name) {
+                const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+                favorites.push({name: name, address: lastTo, lat: lastEnd.lat, lng: lastEnd.lng});
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+                alert('즐겨찾기에 추가되었습니다.');
+            }
+        }
+
+        async function addCustomFavorite() {
+            const name = document.getElementById('favorite-name').value.trim();
+            const address = document.getElementById('favorite-address').value.trim();
+            if (name && address) {
+                const geocode = async (query) => {
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ', Korea')}&format=json&limit=1`);
+                        const data = await res.json();
+                        return data[0] ? data[0] : null;
+                    } catch (err) {
+                        alert('지오코딩 오류: ' + err.message);
+                        return null;
+                    }
+                };
+                const place = await geocode(address);
+                if (place) {
+                    const coord = {lat: place.lat, lng: place.lon};
+                    if (confirm(`이 위치가 맞습니까? ${place.display_name} (위도: ${coord.lat}, 경도: ${coord.lng})`)) {
+                        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+                        favorites.push({name, address, lat: coord.lat, lng: coord.lng});
+                        localStorage.setItem('favorites', JSON.stringify(favorites));
+                        document.getElementById('favorite-name').value = '';
+                        document.getElementById('favorite-address').value = '';
+                        loadFavorites();
+                    }
+                } else {
+                    alert('주소를 찾을 수 없습니다.');
+                }
+            } else {
+                alert('이름과 주소를 입력하세요.');
+            }
+        }
+
+        function loadFavorites() {
+            const list = document.getElementById('favorites-list');
+            list.innerHTML = '';
+            const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+            favorites.forEach(fav => {
+                const div = document.createElement('div');
+                div.className = 'favorite-item';
+                div.innerHTML = `
+                    <div class="favorite-info">
+                        <div class="favorite-name">${fav.name}</div>
+                        <div class="favorite-address">${fav.address}</div>
+                    </div>
+                    <div class="favorite-actions">
+                        <button onclick="navigateToFavorite('${fav.name}', '${fav.address}')"><i class="fas fa-directions"></i></button>
+                        <button onclick="deleteFavorite(this)"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+
+            // Display on map
+            favoriteMarkers.forEach(m => map.removeLayer(m));
+            favoriteMarkers = [];
+            favorites.forEach(fav => {
+                const marker = L.marker([fav.lat, fav.lng]).addTo(map).bindPopup(fav.name);
+                favoriteMarkers.push(marker);
+            });
+            if (favorites.length > 0) {
+                map.fitBounds(favoriteMarkers.map(m => m.getLatLng()));
+            }
+        }
+
+        // Clear favorites markers when switching tabs
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                if (tab.dataset.tab !== 'favorites') {
+                    favoriteMarkers.forEach(marker => map.removeLayer(marker));
+                    favoriteMarkers = [];
+                }
+            });
+        });
+
+        function deleteFavorite(button) {
+            const item = button.closest('.favorite-item');
+            const name = item.querySelector('.favorite-name').textContent;
+            let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+            favorites = favorites.filter(f => f.name !== name);
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            loadFavorites();
+        }
+
+        // Search nearby
+        let nearbyMarkers = [];
+        async function searchNearby(category) {
+            const results = document.getElementById('nearby-results');
+            results.innerHTML = '<div class="loading">검색 중...</div>';
+
+            const center = map.getCenter();
+            const bbox = map.getBounds().toBBoxString();
+            let queryType;
+            switch (category) {
+                case 'restaurant': queryType = 'amenity=restaurant'; break;
+                case 'gas_station': queryType = 'amenity=fuel'; break;
+                case 'hospital': queryType = 'amenity=hospital'; break;
+                case 'bank': queryType = 'amenity=bank'; break;
+                case 'pharmacy': queryType = 'amenity=pharmacy'; break;
+                case 'parking': queryType = 'amenity=parking'; break;
+                case 'cafe': queryType = 'amenity=cafe'; break;
+                case 'shopping': queryType = 'shop~*'; break;
+                case 'lodging': queryType = 'tourism=hotel'; break;
+                default: return;
+            }
+
+            const query = `[out:json];(node["${queryType}"](bbox);way["${queryType}"](bbox);relation["${queryType}"](bbox););out center;`;
+            try {
+                const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}&bbox=${bbox}`);
+                const data = await res.json();
+
+                results.innerHTML = '';
+                nearbyMarkers.forEach(m => map.removeLayer(m));
+                nearbyMarkers = [];
+
+                data.elements.forEach(place => {
+                    const lat = place.lat || place.center.lat;
+                    const lon = place.lon || place.center.lon;
+                    if (lat && lon) {
+                        const name = place.tags.name || 'Unnamed';
+                        const dist = (center.distanceTo([lat, lon]) / 1000).toFixed(1) + 'km';
+
+                        const div = document.createElement('div');
+                        div.className = 'favorite-item';
+                        div.innerHTML = `
+                            <div class="favorite-info">
+                                <div class="favorite-name">${name} (${category})</div>
+                                <div class="favorite-address">거리: ${dist}</div>
+                            </div>
+                            <div class="favorite-actions">
+                                <button onclick="navigateToNearby('${name}', ${lat}, ${lon})"><i class="fas fa-directions"></i></button>
+                            </div>
+                        `;
+                        results.appendChild(div);
+
+                        const marker = L.marker([lat, lon]).addTo(map).bindPopup(name);
+                        nearbyMarkers.push(marker);
+                    }
+                });
+
+                if (data.elements.length > 0) {
+                    map.fitBounds(map.getBounds());
+                } else {
+                    results.innerHTML = '결과가 없습니다.';
+                }
+            } catch (err) {
+                alert('주변 검색 오류: ' + err.message);
+                results.innerHTML = '';
+            }
+        }
+
+        // Clear nearby markers when switching tabs
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                if (tab.dataset.tab !== 'nearby') {
+                    nearbyMarkers.forEach(marker => map.removeLayer(marker));
+                    nearbyMarkers = [];
+                    document.getElementById('nearby-results').innerHTML = '';
+                }
+            });
+        });
+
+        // Navigate to nearby
+        function navigateToNearby(name, lat, lon) {
+            document.getElementById('to').value = name;
+            document.querySelector('[data-tab="route"]').click();
+            map.setView([lat, lon], 15);
+            L.marker([lat, lon]).addTo(map).bindPopup(name);
+        }
+
+        // Navigate to favorite
+        function navigateToFavorite(name, address) {
+            document.getElementById('to').value = address;
+            document.querySelector('[data-tab="route"]').click();
+        }
+
+        // Rerun history
+        function rerunHistory(from, to) {
+            document.getElementById('from').value = from;
+            document.getElementById('to').value = to;
+            document.querySelector('[data-tab="route"]').click();
+            searchRoute();
+        }
+
+        // Delete history
+        function deleteHistory(button) {
+            button.closest('.history-item').remove();
+        }
+
+        // Toggle setting
+        function toggleSetting(el) {
+            el.classList.toggle('active');
+        }
+
+        // Toggle map control
+        function toggleMapControl(button, type) {
+            button.classList.toggle('active');
+            if (type === 'traffic') {
+                if (button.classList.contains('active')) {
+                    trafficLayer.addTo(map);
+                } else {
+                    map.removeLayer(trafficLayer);
+                }
+            } else if (type === 'satellite') {
+                if (button.classList.contains('active')) {
+                    map.removeLayer(osmLayer);
+                    satelliteLayer.addTo(map);
+                } else {
+                    map.removeLayer(satelliteLayer);
+                    osmLayer.addTo(map);
+                }
+            }
+        }
+
+        // Load favorites on start if tab is favorites
+        if (document.querySelector('.nav-tab.active').dataset.tab === 'favorites') {
+            loadFavorites();
+        }
+    </script>
 </body>
 </html>
+```

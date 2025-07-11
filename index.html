@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>기웅네비 - 기웅이다운 네비게이션 (수정본)</title>
+    <title>기웅네비 - 스마트 네비게이션</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -377,7 +377,6 @@
         .transport-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
         .transport-mode { border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; font-size: 12px; }
         .transport-mode i { font-size: 20px; margin-bottom: 5px; display: block; }
-        /* --- 경로 옵션 UI 수정 --- */
         .route-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
         .route-option { border-radius: 8px; padding: 12px; text-align: center; cursor: pointer; font-size: 12px; }
         .route-option i { margin-right: 5px; }
@@ -648,8 +647,8 @@
     <div class="main-container">
         <div class="sidebar">
             <div class="header">
-                <h1><i class="fas fa-map-marked-alt"></i>기웅네비</h1>
-                <p>기웅이다운 네비게이션 서비스</p>
+                <h1><i class="fas fa-map-marked-alt"></i> 기웅네비</h1>
+                <p>완벽한 네비게이션 서비스</p>
             </div>
 
             <div class="nav-tabs">
@@ -1215,11 +1214,13 @@
                     favoriteMarkers = []; 
                     nearbyMarkers = [];
 
-                    // Shrink map if not on route tab (only applies on mobile due to CSS media query)
+                    // ▼▼▼ JS 수정: 길찾기 탭이 아닐 경우 지도 크기 원래대로 복구 ▼▼▼
                     if (tab.dataset.tab !== 'route') {
                         document.querySelector('.main-container').classList.remove('map-enlarged');
-                        map.invalidateSize();
+                        // 딜레이를 주어 CSS 트랜지션 후 지도 크기 재계산
+                        setTimeout(() => map.invalidateSize(), 300); 
                     }
+                    // ▲▲▲ JS 수정: 길찾기 탭이 아닐 경우 지도 크기 원래대로 복구 ▲▲▲
 
                     if (tab.dataset.tab === 'favorites') loadFavorites();
                     if (tab.dataset.tab === 'history') loadHistory();
@@ -1235,19 +1236,19 @@
                 });
             });
 
-            // Resizer functionality (only active when resizer is visible on mobile)
+            // ▼▼▼ JS 추가: 모바일 리사이저 기능 ▼▼▼
             const resizer = document.getElementById('resizer');
             const mapContainer = document.querySelector('.map-container');
             const sidebar = document.querySelector('.sidebar');
             let isResizing = false;
 
             resizer.addEventListener('mousedown', (e) => {
-                // Only enable resizing if the resizer is visible (i.e., on mobile)
+                // 데스크탑 뷰에서는 리사이저가 숨겨져 있으므로, 보일 때만 동작
                 if (window.getComputedStyle(resizer).display === 'none') return;
 
                 isResizing = true;
-                document.body.style.cursor = 'ns-resize';
-                map.dragging.disable(); // Disable map dragging during resize
+                document.body.style.cursor = 'ns-resize'; // 커서 모양 변경
+                map.dragging.disable(); // 리사이즈 중 맵 드래그 비활성화
                 document.addEventListener('mousemove', handleMouseMove);
                 document.addEventListener('mouseup', handleMouseUp);
             });
@@ -1256,28 +1257,30 @@
                 if (!isResizing) return;
                 const mainContainer = document.querySelector('.main-container');
                 const containerHeight = mainContainer.offsetHeight;
-                const newMapHeight = e.clientY - mainContainer.offsetTop; // Calculate Y relative to main-container
+                // e.clientY는 뷰포트 상단 기준이므로, mainContainer의 offset을 빼줄 필요 없음
+                const newMapHeight = e.clientY; 
                 const newSidebarHeight = containerHeight - newMapHeight - resizer.offsetHeight;
 
-                // Ensure min/max heights are respected
+                // 최소 높이 제약 조건 확인
                 const mapMinHeight = parseFloat(window.getComputedStyle(mapContainer).minHeight);
                 const sidebarMinHeight = parseFloat(window.getComputedStyle(sidebar).minHeight);
-
-                // Prevent map from going above/below container bounds
-                if (newMapHeight >= mapMinHeight && newSidebarHeight >= sidebarMinHeight && newMapHeight <= containerHeight - resizer.offsetHeight - sidebarMinHeight) {
+                
+                // 경계 내에서만 리사이즈되도록 함
+                if (newMapHeight >= mapMinHeight && newSidebarHeight >= sidebarMinHeight) {
                     mapContainer.style.height = `${newMapHeight}px`;
                     sidebar.style.height = `${newSidebarHeight}px`;
-                    map.invalidateSize(); // Update map size
+                    map.invalidateSize(); // 지도 크기가 변경되었음을 Leaflet에 알림
                 }
             }
 
             function handleMouseUp() {
                 isResizing = false;
-                document.body.style.cursor = 'default';
-                map.dragging.enable(); // Re-enable map dragging
+                document.body.style.cursor = 'default'; // 커서 모양 원래대로
+                map.dragging.enable(); // 맵 드래그 다시 활성화
                 document.removeEventListener('mousemove', handleMouseMove);
                 document.removeEventListener('mouseup', handleMouseUp);
             }
+            // ▲▲▲ JS 추가: 모바일 리사이저 기능 ▲▲▲
         });
 
         const fetchWeather = async (lat, lon) => {
@@ -1313,7 +1316,6 @@
 
         function setQuickLocation(loc) {
             document.getElementById('to').value = loc;
-            // Do not call searchRoute directly here. User should click search button.
         }
         
         function saveToHistory(from, to) {
@@ -1343,7 +1345,6 @@
             document.querySelector('.nav-tab[data-tab="route"]').click();
             document.getElementById('from').value = from;
             document.getElementById('to').value = to;
-            // Do not call searchRoute directly here. User should click search button.
         }
 
         function deleteHistory(event, index) {
@@ -1395,7 +1396,6 @@
             favorites.forEach((fav, index) => {
                 const div = document.createElement('div');
                 div.className = 'favorite-item';
-                // --- 2. 즐겨찾기 클릭 시 동작 변경 (커스텀 모달 사용) ---
                 div.innerHTML = `<div class="favorite-info" onclick="showDestinationSelectModal('${fav.name.replace(/'/g, "\\'")}', '${fav.address.replace(/'/g, "\\'")}', ${fav.lat}, ${fav.lon})"><div class="favorite-name">${fav.name}</div><div class="favorite-address">${fav.address}</div></div><div class="favorite-actions"><button onclick="deleteFavorite(event, ${index})"><i class="fas fa-trash"></i></button></div>`;
                 list.appendChild(div);
                 const marker = L.marker([fav.lat, fav.lon]).addTo(map)
@@ -1413,7 +1413,6 @@
             loadFavorites();
         }
         
-        // --- New functions for custom destination selection modal ---
         const destinationSelectModal = document.getElementById('destination-select-modal');
         const destinationSelectTitle = document.getElementById('destination-select-title');
         const destinationSelectAddress = document.getElementById('destination-select-address');
@@ -1437,8 +1436,6 @@
                 selectedEnd = { display_name: pendingDestinationSelection.address, lat: pendingDestinationSelection.lat, lon: pendingDestinationSelection.lon };
             }
             closeDestinationSelectModal();
-            
-            // Do not call searchRoute directly here. User should click search button.
         }
 
         function closeDestinationSelectModal() {
@@ -1449,14 +1446,15 @@
         function navigateToNearby(name) {
              document.querySelector('.nav-tab[data-tab="route"]').click();
              document.getElementById('to').value = name;
-             // Do not call searchRoute directly here. User should click search button.
         }
 
-        // Function to enlarge map after search (only affects mobile due to CSS media query)
+        // ▼▼▼ JS 추가: 길찾기 후 지도 확대 기능 (모바일 전용) ▼▼▼
         function enlargeMap() {
             document.querySelector('.main-container').classList.add('map-enlarged');
-            map.invalidateSize(); // Update map size after resize
+            // CSS 트랜지션(0.3s)이 끝난 후 지도 크기를 다시 계산하여 타일 깨짐 방지
+            setTimeout(() => map.invalidateSize(), 300);
         }
+        // ▲▲▲ JS 추가: 길찾기 후 지도 확대 기능 (모바일 전용) ▲▲▲
     </script>
 </body>
 </html>

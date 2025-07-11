@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>기웅네비 - 스마트 네비게이션</title>
+    <title>NaviPro - 스마트 네비게이션 (수정본)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -19,6 +19,8 @@
             min-height: 100vh;
             color: #333;
             transition: background-color 0.3s, color 0.3s;
+            /* 모바일에서 스크롤 및 확대/축소 방지 */
+            overflow: hidden;
         }
 
         body.dark-mode {
@@ -51,7 +53,7 @@
             box-shadow: 2px 0 20px rgba(0,0,0,0.1); /* Shadow for separation */
             overflow-y: auto;
             z-index: 1000;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, height 0.3s ease-in-out; /* 높이 변경 애니메이션 추가 */
         }
 
         body.dark-mode .sidebar {
@@ -445,15 +447,16 @@
 
             .map-container {
                 height: 45vh; /* Initial smaller map height for mobile */
-                min-height: 200px;
+                min-height: 150px; /* 최소 높이 조정 */
                 width: auto; /* Reset width to auto for column layout */
                 flex-shrink: 0;
+                transition: height 0.3s ease-in-out; /* 높이 변경 애니메이션 추가 */
             }
 
             .sidebar {
                 flex: 1; /* Sidebar takes remaining vertical space */
-                height: 55vh; /* Initial sidebar height for mobile */
-                min-height: 350px;
+                height: calc(55vh - 8px); /* Initial sidebar height for mobile (resizer height 포함) */
+                min-height: 250px; /* 최소 높이 조정 */
                 width: auto; /* Reset width to auto for column layout */
                 box-shadow: 0 -2px 20px rgba(0,0,0,0.1); /* Adjust shadow for bottom */
             }
@@ -469,22 +472,14 @@
             body.dark-mode .resizer {
                 background: #47476b;
             }
-            .resizer:hover {
+            .resizer:hover, .resizer:active {
                 background: #667eea;
             }
-            body.dark-mode .resizer:hover {
+            body.dark-mode .resizer:hover, body.dark-mode .resizer:active {
                 background: #8a9aff;
             }
 
-            /* Mobile specific map enlarged class */
-            .map-enlarged .map-container {
-                height: 70vh !important; /* Enlarge map after search */
-            }
-            .map-enlarged .sidebar {
-                height: 30vh !important; /* Shrink sidebar */
-            }
-
-            /* General mobile adjustments from previous turn */
+            /* General mobile adjustments */
             .header h1 { font-size: 1.5em; }
             .header p { font-size: 0.8em; }
             .nav-tab { font-size: 12px; padding: 12px; }
@@ -645,10 +640,19 @@
 </head>
 <body>
     <div class="main-container">
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="map-controls">
+                <button class="map-control-btn" onclick="toggleMapControl(this, 'satellite')"><i class="fas fa-satellite"></i></button>
+            </div>
+        </div>
+
+        <div class="resizer" id="resizer"></div>
+
         <div class="sidebar">
             <div class="header">
-                <h1><i class="fas fa-map-marked-alt"></i> 기웅네비</h1>
-                <p>완벽한 네비게이션 서비스</p>
+                <h1><i class="fas fa-map-marked-alt"></i> NaviPro</h1>
+                <p>전문 네비게이션 서비스</p>
             </div>
 
             <div class="nav-tabs">
@@ -774,13 +778,6 @@
                 </div>
             </div>
         </div>
-        <div class="resizer" id="resizer"></div>
-        <div class="map-container">
-            <div id="map"></div>
-            <div class="map-controls">
-                <button class="map-control-btn" onclick="toggleMapControl(this, 'satellite')"><i class="fas fa-satellite"></i></button>
-            </div>
-        </div>
     </div>
     
     <div class="modal-overlay" id="location-modal">
@@ -812,11 +809,9 @@
         var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' });
         var darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© CARTO' });
         
-        // --- 지도 레이어 상태 관리 ---
         let currentBaseLayer = osmLayer;
         currentBaseLayer.addTo(map);
         
-        // --- 3. 출발지/도착지 아이콘 설정 ---
         const createFlagIcon = (color) => {
             return L.divIcon({
                 html: `<i class="fas fa-flag" style="color: ${color}; font-size: 24px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);"></i>`,
@@ -826,8 +821,8 @@
                 popupAnchor: [0, -24]
             });
         };
-        const startIcon = createFlagIcon('#2ecc71'); // Green
-        const endIcon = createFlagIcon('#e74c3c');   // Red
+        const startIcon = createFlagIcon('#2ecc71');
+        const endIcon = createFlagIcon('#e74c3c');
 
         let currentRoutes = [];
         let currentPolylines = [];
@@ -837,7 +832,7 @@
         let nearbyMarkers = [];
         let selectedStart = null;
         let selectedEnd = null;
-        let pendingDestinationSelection = null; // Stores info for the new destination selection modal
+        let pendingDestinationSelection = null;
 
         const geocode = async (query) => {
             if (!query) return null;
@@ -846,7 +841,6 @@
                     headers: { 'User-Agent': 'NaviPro/1.0 (test@example.com)' }
                 });
                 const data = await res.json();
-                // Ensure lat and lon are parsed as floats
                 return data.length > 0 ? data.map(item => ({
                     ...item,
                     lat: parseFloat(item.lat),
@@ -941,13 +935,12 @@
             if (document.getElementById('avoid-highways').checked) avoidFeatures.push('highways');
             if (document.getElementById('avoid-ferries').checked) avoidFeatures.push('ferries');
 
-            const startCoords = [selectedStart.lon, selectedStart.lat]; // lat and lon are now numbers
-            const endCoords = [selectedEnd.lon, selectedEnd.lat];     // lat and lon are now numbers
+            const startCoords = [selectedStart.lon, selectedStart.lat];
+            const endCoords = [selectedEnd.lon, selectedEnd.lat];
 
-            // --- 1. 거리 제한 오류 해결 로직 ---
             const startLatLng = L.latLng(selectedStart.lat, selectedStart.lon);
             const endLatLng = L.latLng(selectedEnd.lat, selectedEnd.lon);
-            const distance = startLatLng.distanceTo(endLatLng); // meters
+            const distance = startLatLng.distanceTo(endLatLng);
 
             const requestBody = {
                 coordinates: [startCoords, endCoords],
@@ -956,7 +949,6 @@
                 options: { avoid_features: avoidFeatures }
             };
 
-            // 거리가 140km 미만일 때만 대안 경로 요청
             if (distance < 140000) {
                  requestBody.alternative_routes = { target_count: 3, share_factor: 0.6, weight_factor: 1.4 };
             }
@@ -1026,7 +1018,7 @@
             }
             
             selectAlternative(0);
-            enlargeMap(); // Enlarge map after search results are displayed (only affects mobile due to CSS media query)
+            enlargeMap();
         }
 
         function selectAlternative(index) {
@@ -1041,7 +1033,6 @@
                 cost = Math.round((summary.distance / 1000) * 120);
             }
             document.getElementById('total-cost').textContent = `₩${cost.toLocaleString()}`;
-
             document.getElementById('total-time').textContent = `${Math.round(summary.duration / 60)}분`;
             document.getElementById('total-distance').textContent = `${(summary.distance / 1000).toFixed(1)}km`;
 
@@ -1050,18 +1041,14 @@
             currentPolylines.forEach(p => map.removeLayer(p));
             currentPolylines = [];
             
-            // --- 1. 출발지/도착지 아이콘 적용 및 부가 정보 표시 ---
             if (selectedStart) {
                 startMarker = L.marker([selectedStart.lat, selectedStart.lon], { icon: startIcon }).addTo(map)
-                    .bindPopup(`<b>출발지: ${selectedStart.display_name}</b><br>위도: ${selectedStart.lat.toFixed(4)}, 경도: ${selectedStart.lon.toFixed(4)}`)
-                    .openPopup();
+                    .bindPopup(`<b>출발지: ${selectedStart.display_name}</b>`).openPopup();
             }
             if (selectedEnd) {
                 endMarker = L.marker([selectedEnd.lat, selectedEnd.lon], { icon: endIcon }).addTo(map)
-                    .bindPopup(`<b>도착지: ${selectedEnd.display_name}</b><br>위도: ${selectedEnd.lat.toFixed(4)}, 경도: ${selectedEnd.lon.toFixed(4)}`)
-                    .openPopup();
+                    .bindPopup(`<b>도착지: ${selectedEnd.display_name}</b>`).openPopup();
             }
-
 
             if(route.geometry){
                 const leafletCoords = route.geometry.map(coord => [coord[1], coord[0]]);
@@ -1127,7 +1114,7 @@
                         const address = place.tags['addr:full'] || place.tags['addr:street'] || '주소 정보 없음';
                         const dist = (center.distanceTo([lat, lon]) / 1000);
                         
-                        placeItems.push({ lat: parseFloat(lat), lon: parseFloat(lon), name, dist, address }); // Ensure lat/lon are floats
+                        placeItems.push({ lat: parseFloat(lat), lon: parseFloat(lon), name, dist, address });
                     }
                 });
 
@@ -1137,7 +1124,6 @@
                     const div = document.createElement('div');
                     div.className = 'favorite-item';
                     div.style.cursor = 'pointer';
-                    // --- 4. 주변 장소 클릭 시 정보 표시 및 출발/도착지 선택 모달 띄우기 ---
                     div.onclick = () => showDestinationSelectModal(item.name, item.address, item.lat, item.lon);
                     div.innerHTML = `
                         <div class="favorite-info">
@@ -1195,6 +1181,9 @@
             }
         }
 
+        // ===================================================================
+        // ▼▼▼ JS 수정: 모바일 리사이저 및 탭 전환 로직 수정 ▼▼▼
+        // ===================================================================
         document.addEventListener('DOMContentLoaded', () => {
             navigator.geolocation.getCurrentPosition(pos => {
                 const { latitude, longitude } = pos.coords;
@@ -1213,14 +1202,11 @@
                     [...favoriteMarkers, ...nearbyMarkers].forEach(m => map.removeLayer(m));
                     favoriteMarkers = []; 
                     nearbyMarkers = [];
-
-                    // ▼▼▼ JS 수정: 길찾기 탭이 아닐 경우 지도 크기 원래대로 복구 ▼▼▼
+                    
+                    // 길찾기 탭이 아닐 경우 지도/패널 크기를 기본으로 되돌림
                     if (tab.dataset.tab !== 'route') {
-                        document.querySelector('.main-container').classList.remove('map-enlarged');
-                        // 딜레이를 주어 CSS 트랜지션 후 지도 크기 재계산
-                        setTimeout(() => map.invalidateSize(), 300); 
+                        resetMapSize();
                     }
-                    // ▲▲▲ JS 수정: 길찾기 탭이 아닐 경우 지도 크기 원래대로 복구 ▲▲▲
 
                     if (tab.dataset.tab === 'favorites') loadFavorites();
                     if (tab.dataset.tab === 'history') loadHistory();
@@ -1236,51 +1222,59 @@
                 });
             });
 
-            // ▼▼▼ JS 추가: 모바일 리사이저 기능 ▼▼▼
+            // --- 모바일 리사이저 기능 (마우스 및 터치 이벤트 모두 지원) ---
             const resizer = document.getElementById('resizer');
             const mapContainer = document.querySelector('.map-container');
             const sidebar = document.querySelector('.sidebar');
             let isResizing = false;
 
-            resizer.addEventListener('mousedown', (e) => {
-                // 데스크탑 뷰에서는 리사이저가 숨겨져 있으므로, 보일 때만 동작
+            const startResizing = (e) => {
                 if (window.getComputedStyle(resizer).display === 'none') return;
-
                 isResizing = true;
-                document.body.style.cursor = 'ns-resize'; // 커서 모양 변경
-                map.dragging.disable(); // 리사이즈 중 맵 드래그 비활성화
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseup', handleMouseUp);
-            });
+                map.dragging.disable();
+                document.body.style.cursor = 'ns-resize';
 
-            function handleMouseMove(e) {
+                document.addEventListener('mousemove', handleMove);
+                document.addEventListener('touchmove', handleMove, { passive: false });
+                document.addEventListener('mouseup', stopResizing);
+                document.addEventListener('touchend', stopResizing);
+            };
+
+            const handleMove = (e) => {
                 if (!isResizing) return;
+                e.preventDefault(); // 터치 스크롤 방지
+
+                // 터치 또는 마우스 이벤트에서 Y 좌표 추출
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
                 const mainContainer = document.querySelector('.main-container');
                 const containerHeight = mainContainer.offsetHeight;
-                // e.clientY는 뷰포트 상단 기준이므로, mainContainer의 offset을 빼줄 필요 없음
-                const newMapHeight = e.clientY; 
+                const newMapHeight = clientY;
                 const newSidebarHeight = containerHeight - newMapHeight - resizer.offsetHeight;
 
-                // 최소 높이 제약 조건 확인
                 const mapMinHeight = parseFloat(window.getComputedStyle(mapContainer).minHeight);
                 const sidebarMinHeight = parseFloat(window.getComputedStyle(sidebar).minHeight);
                 
-                // 경계 내에서만 리사이즈되도록 함
                 if (newMapHeight >= mapMinHeight && newSidebarHeight >= sidebarMinHeight) {
                     mapContainer.style.height = `${newMapHeight}px`;
                     sidebar.style.height = `${newSidebarHeight}px`;
-                    map.invalidateSize(); // 지도 크기가 변경되었음을 Leaflet에 알림
+                    map.invalidateSize();
                 }
-            }
-
-            function handleMouseUp() {
+            };
+            
+            const stopResizing = () => {
                 isResizing = false;
-                document.body.style.cursor = 'default'; // 커서 모양 원래대로
-                map.dragging.enable(); // 맵 드래그 다시 활성화
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
-            }
-            // ▲▲▲ JS 추가: 모바일 리사이저 기능 ▲▲▲
+                map.dragging.enable();
+                document.body.style.cursor = 'default';
+
+                document.removeEventListener('mousemove', handleMove);
+                document.removeEventListener('touchmove', handleMove);
+                document.removeEventListener('mouseup', stopResizing);
+                document.removeEventListener('touchend', stopResizing);
+            };
+
+            resizer.addEventListener('mousedown', startResizing);
+            resizer.addEventListener('touchstart', startResizing, { passive: false });
         });
 
         const fetchWeather = async (lat, lon) => {
@@ -1309,7 +1303,6 @@
         function swapLocations() {
             [document.getElementById('from').value, document.getElementById('to').value] = 
             [document.getElementById('to').value, document.getElementById('from').value];
-            // Clear selectedStart/End if values are swapped, to re-geocode on next search
             selectedStart = null;
             selectedEnd = null;
         }
@@ -1443,18 +1436,25 @@
             pendingDestinationSelection = null;
         }
 
-        function navigateToNearby(name) {
-             document.querySelector('.nav-tab[data-tab="route"]').click();
-             document.getElementById('to').value = name;
-        }
-
-        // ▼▼▼ JS 추가: 길찾기 후 지도 확대 기능 (모바일 전용) ▼▼▼
+        // 지도 확대/축소 로직 수정
         function enlargeMap() {
-            document.querySelector('.main-container').classList.add('map-enlarged');
-            // CSS 트랜지션(0.3s)이 끝난 후 지도 크기를 다시 계산하여 타일 깨짐 방지
+            if (window.innerWidth > 768) return; // 모바일에서만 동작
+            const mapContainer = document.querySelector('.map-container');
+            const sidebar = document.querySelector('.sidebar');
+            mapContainer.style.height = '70vh';
+            sidebar.style.height = 'calc(30vh - 8px)'; // 리사이저 높이(8px) 제외
             setTimeout(() => map.invalidateSize(), 300);
         }
-        // ▲▲▲ JS 추가: 길찾기 후 지도 확대 기능 (모바일 전용) ▲▲▲
+
+        function resetMapSize() {
+            if (window.innerWidth > 768) return; // 모바일에서만 동작
+            const mapContainer = document.querySelector('.map-container');
+            const sidebar = document.querySelector('.sidebar');
+            mapContainer.style.height = ''; // 인라인 스타일 제거하여 CSS 기본값으로 복귀
+            sidebar.style.height = ''; // 인라인 스타일 제거
+            setTimeout(() => map.invalidateSize(), 300);
+        }
+
     </script>
 </body>
 </html>

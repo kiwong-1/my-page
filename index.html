@@ -7,732 +7,1782 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #5B63F5;
+            --primary-dark: #4850E8;
+            --primary-light: #7B82FF;
+            --secondary: #FF6B6B;
+            --success: #51CF66;
+            --warning: #FFD93D;
+            --danger: #FF6B6B;
+            --dark: #2D3436;
+            --light: #F8F9FA;
+            --gray: #6C757D;
+            --white: #FFFFFF;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+            --shadow: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+            --radius: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f2f5;
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #F5F7FA;
             min-height: 100vh;
-            color: #333;
-            transition: background-color 0.3s, color 0.3s;
+            color: var(--dark);
+            transition: var(--transition);
+            overflow-x: hidden;
         }
 
         body.dark-mode {
-            background-color: #1a1a2e;
-            color: #e0e0e0;
+            --dark: #E9ECEF;
+            --light: #1A1D21;
+            --white: #2A2D31;
+            background: #0F1114;
         }
 
+        /* Main Container Layout */
         .main-container {
             display: flex;
-            flex-direction: row; /* Desktop: Sidebar on left, Map on right */
             height: 100vh;
             overflow: hidden;
+            position: relative;
         }
 
-        .map-container {
-            flex: 1; /* Map takes remaining space horizontally */
-            height: 100%; /* Map takes full height on desktop */
-            position: relative; /* For map controls */
-        }
-
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-        
-        /* ▼▼▼ 도착지 정보 팝업 스타일 ▼▼▼ */
-        .leaflet-popup-content-wrapper {
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .leaflet-popup-content {
-            margin: 15px 20px;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        .route-popup-info {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
-        }
-        body.dark-mode .route-popup-info {
-            border-top-color: #47476b;
-        }
-        .route-popup-info div {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-        }
-        .route-popup-info .fa-solid {
-            color: #667eea;
-        }
-        body.dark-mode .route-popup-info .fa-solid {
-            color: #8a9aff;
-        }
-        /* ▲▲▲ 도착지 정보 팝업 스타일 종료 ▲▲▲ */
-
+        /* Desktop Sidebar */
         .sidebar {
-            width: 420px; 
+            width: 480px;
             height: 100%;
-            background: white;
-            box-shadow: 2px 0 20px rgba(0,0,0,0.1); /* Shadow for separation */
-            overflow-y: auto;
+            background: var(--white);
+            box-shadow: 4px 0 24px rgba(0,0,0,0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
             z-index: 1000;
-            transition: background-color 0.3s;
+            transition: var(--transition);
         }
 
         body.dark-mode .sidebar {
-            background: #1e1e3f;
-            color: #e0e0e0;
-        }
-        
-        .resizer {
-            display: none; /* Hide resizer on desktop by default */
+            background: #1A1D21;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.3);
         }
 
+        /* Header */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
-            padding: 20px;
+            padding: 24px;
             text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.3; }
         }
 
         .header h1 {
-            font-size: 1.8em;
-            margin-bottom: 5px;
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+            letter-spacing: -0.5px;
         }
 
         .header p {
-            font-size: 0.9em;
-            opacity: 0.9;
+            font-size: 0.95em;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
         }
 
+        /* Navigation Tabs */
         .nav-tabs {
             display: flex;
-            background: #f8f9fa;
-            border-bottom: 2px solid #e9ecef;
+            background: var(--light);
+            padding: 8px;
+            gap: 4px;
+            position: relative;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
-        
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
         body.dark-mode .nav-tabs {
-             background: #2c2c54;
-             border-bottom: 2px solid #47476b;
+            background: #0F1114;
         }
 
         .nav-tab {
             flex: 1;
-            padding: 15px;
+            min-width: 90px;
+            padding: 12px 16px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             border: none;
-            background: none;
+            background: transparent;
             font-size: 14px;
-            font-weight: 600;
-            color: #555;
+            font-weight: 500;
+            color: var(--gray);
+            border-radius: var(--radius);
+            position: relative;
+            white-space: nowrap;
         }
-        
-        body.dark-mode .nav-tab {
-            color: #b0b0d0;
+
+        .nav-tab::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: var(--primary);
+            transition: var(--transition);
+            transform: translateX(-50%);
+            border-radius: 3px;
         }
 
         .nav-tab.active {
-            background: white;
-            color: #667eea;
-            border-bottom: 3px solid #667eea;
+            background: var(--white);
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
         }
-        
+
+        .nav-tab.active::before {
+            width: 30px;
+        }
+
+        body.dark-mode .nav-tab {
+            color: #8B95A1;
+        }
+
         body.dark-mode .nav-tab.active {
-            background: #1e1e3f;
-            color: #8a9aff;
-            border-bottom-color: #8a9aff;
+            background: #2A2D31;
+            color: var(--primary-light);
         }
 
-        .nav-tab:hover {
-            background: #e9ecef;
-        }
-        
-        body.dark-mode .nav-tab:hover {
-            background: #47476b;
+        .nav-tab:hover:not(.active) {
+            background: rgba(91, 99, 245, 0.08);
+            color: var(--primary);
         }
 
+        /* Tab Content */
         .tab-content {
             display: none;
-            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            animation: fadeIn 0.3s ease-out;
         }
 
         .tab-content.active {
             display: block;
         }
 
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Scrollbar Styling */
+        .tab-content::-webkit-scrollbar,
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .tab-content::-webkit-scrollbar-track,
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb,
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.1);
+            border-radius: 3px;
+        }
+
+        body.dark-mode .tab-content::-webkit-scrollbar-thumb,
+        body.dark-mode .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Input Groups */
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 14px;
+            letter-spacing: -0.2px;
+        }
+
         .input-group input {
             width: 100%;
-            padding: 12px 40px 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            background: #fff;
-            color: #333;
+            padding: 14px 48px 14px 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: var(--radius);
+            font-size: 15px;
+            transition: var(--transition);
+            background: var(--white);
+            color: var(--dark);
+            font-weight: 500;
         }
-        
+
         body.dark-mode .input-group input {
-            background: #2c2c54;
-            color: #e0e0e0;
-            border-color: #47476b;
+            background: #2A2D31;
+            border-color: #3A3D41;
         }
 
         .input-group input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(91, 99, 245, 0.1);
         }
-        
-        .input-group label, body.dark-mode .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-            font-size: 14px;
-        }
-        
-        body.dark-mode .input-group label{
-            color: #b0b0d0;
+
+        .input-group input::placeholder {
+            color: #94A3B8;
+            font-weight: 400;
         }
 
         .input-icon {
             position: absolute;
-            right: 12px;
+            right: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: #999;
-        }
-        
-        body.dark-mode .input-icon{
-            color: #888;
+            color: #94A3B8;
+            font-size: 18px;
+            pointer-events: none;
         }
 
+        /* Swap Button */
         .swap-btn {
             position: absolute;
-            right: -20px;
+            right: -26px;
             top: 50%;
             transform: translateY(-50%);
-            background: #667eea;
+            background: var(--white);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .swap-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        body.dark-mode .swap-btn {
+            background: #2A2D31;
+            border-color: var(--primary-light);
+            color: var(--primary-light);
+        }
+
+        body.dark-mode .swap-btn:hover {
+            background: var(--primary-light);
+            color: #1A1D21;
+        }
+
+        /* Transport Modes */
+        .transport-modes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .transport-mode {
+            background: var(--light);
+            border: 2px solid transparent;
+            border-radius: var(--radius);
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .transport-mode::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent, rgba(91, 99, 245, 0.1));
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .transport-mode:hover::before {
+            opacity: 1;
+        }
+
+        .transport-mode i {
+            font-size: 28px;
+            margin-bottom: 8px;
+            display: block;
+            color: var(--gray);
+            transition: var(--transition);
+        }
+
+        .transport-mode div {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--gray);
+            transition: var(--transition);
+        }
+
+        .transport-mode:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .transport-mode.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 8px 20px rgba(91, 99, 245, 0.3);
+        }
+
+        .transport-mode.active i,
+        .transport-mode.active div {
+            color: white;
+        }
+
+        body.dark-mode .transport-mode {
+            background: #2A2D31;
+        }
+
+        body.dark-mode .transport-mode:hover {
+            background: #3A3D41;
+        }
+
+        body.dark-mode .transport-mode.active {
+            background: var(--primary);
+        }
+
+        /* Route Options */
+        .route-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .route-option {
+            background: var(--light);
+            border: 2px solid transparent;
+            border-radius: var(--radius);
+            padding: 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .route-option i {
+            font-size: 18px;
+        }
+
+        .route-option:hover {
+            background: rgba(91, 99, 245, 0.08);
+            border-color: rgba(91, 99, 245, 0.3);
+            color: var(--primary);
+        }
+
+        .route-option.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(91, 99, 245, 0.3);
+        }
+
+        body.dark-mode .route-option {
+            background: #2A2D31;
+            color: #8B95A1;
+        }
+
+        body.dark-mode .route-option:hover {
+            background: #3A3D41;
+            border-color: var(--primary-light);
+            color: var(--primary-light);
+        }
+
+        body.dark-mode .route-option.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Advanced Options */
+        .advanced-options {
+            background: var(--light);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .advanced-options h4 {
+            color: var(--dark);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .advanced-options h4 i {
+            color: var(--primary);
+        }
+
+        body.dark-mode .advanced-options {
+            background: #2A2D31;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .checkbox-item:hover {
+            background: rgba(91, 99, 245, 0.05);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .checkbox-item label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--dark);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Search Button */
+        .search-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
             border: none;
-            border-radius: 50%;
-            width: 35px;
-            height: 35px;
-            cursor: pointer;
+            padding: 16px;
+            border-radius: var(--radius);
             font-size: 16px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-            z-index: 5;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .transport-mode, .route-option, .nearby-category, .location-tag, .route-alternative, .advanced-options, .favorite-item, .history-item {
-            background: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            transition: all 0.3s ease;
+        .search-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
         }
-        
-        body.dark-mode .transport-mode, 
-        body.dark-mode .route-option,
-        body.dark-mode .nearby-category,
-        body.dark-mode .location-tag,
-        body.dark-mode .route-alternative,
-        body.dark-mode .advanced-options,
-        body.dark-mode .favorite-item,
-        body.dark-mode .history-item
-        {
-            background: #2c2c54;
-            border-color: #47476b;
+
+        .search-btn:hover::before {
+            width: 300px;
+            height: 300px;
         }
-        
-        .transport-mode:hover, .route-option:hover, .nearby-category:hover, .location-tag:hover, .route-alternative:hover {
-             border-color: #667eea;
-             background: white;
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(91, 99, 245, 0.4);
         }
-        
-        body.dark-mode .transport-mode:hover, 
-        body.dark-mode .route-option:hover,
-        body.dark-mode .nearby-category:hover,
-        body.dark-mode .location-tag:hover,
-        body.dark-mode .route-alternative:hover {
-            border-color: #8a9aff;
-            background: #47476b;
+
+        .search-btn:active {
+            transform: translateY(0);
         }
-        
-        .transport-mode.active, .route-option.active, .route-alternative.active {
-            border-color: #667eea;
-            background: #667eea;
+
+        .search-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .search-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Quick Locations */
+        .quick-locations {
+            margin-bottom: 24px;
+        }
+
+        .quick-locations h4 {
+            color: var(--dark);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quick-locations h4 i {
+            color: var(--warning);
+        }
+
+        .location-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .location-tag {
+            background: var(--light);
+            border: 2px solid transparent;
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .location-tag:hover {
+            background: var(--primary);
             color: white;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(91, 99, 245, 0.3);
         }
 
-        body.dark-mode .transport-mode.active, 
-        body.dark-mode .route-option.active, 
-        body.dark-mode .route-alternative.active {
-            background: #8a9aff;
-            border-color: #8a9aff;
-            color: #1a1a2e;
+        body.dark-mode .location-tag {
+            background: #2A2D31;
         }
 
+        body.dark-mode .location-tag:hover {
+            background: var(--primary);
+        }
 
-        .quick-locations h4, .advanced-options h4, .directions h4, .nearby-places h4, .settings-section h4 {
-            color: #667eea;
+        /* Results Section */
+        .results-section {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-top: 24px;
+            animation: slideUp 0.4s ease-out;
         }
-        
-        body.dark-mode .quick-locations h4, 
-        body.dark-mode .advanced-options h4, 
-        body.dark-mode .directions h4, 
-        body.dark-mode .nearby-places h4, 
-        body.dark-mode .settings-section h4 {
-            color: #8a9aff;
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        
+
+        body.dark-mode .results-section {
+            background: #1A1D21;
+        }
+
+        .route-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
         .summary-item {
-             background: white;
-             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        body.dark-mode .summary-item {
-            background: #2c2c54;
-        }
-        
-        .summary-item .label {
-            color: #666;
-        }
-        
-        body.dark-mode .summary-item .label, body.dark-mode .step-distance, body.dark-mode .favorite-address, body.dark-mode .history-date {
-            color: #aaa;
+            text-align: center;
+            color: white;
         }
 
-        .direction-step:hover, .favorite-item:hover, .history-item:hover {
-            background: #f0f2f5;
-            border-left: 3px solid #667eea;
+        .summary-item .value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
         }
-        
-        body.dark-mode .direction-step:hover, body.dark-mode .favorite-item:hover, body.dark-mode .history-item:hover {
-            background: #47476b;
-            border-left-color: #8a9aff;
+
+        .summary-item .label {
+            font-size: 13px;
+            opacity: 0.9;
         }
-        
+
+        /* Add to Favorites Button */
+        .add-to-favorites {
+            background: var(--white);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            padding: 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            width: calc(100% - 40px);
+            margin: 0 20px 20px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .add-to-favorites:hover {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(91, 99, 245, 0.3);
+        }
+
+        body.dark-mode .add-to-favorites {
+            background: #2A2D31;
+            color: var(--primary-light);
+            border-color: var(--primary-light);
+        }
+
+        body.dark-mode .add-to-favorites:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Route Alternatives */
+        .route-alternatives {
+            padding: 20px;
+            border-top: 1px solid rgba(0,0,0,0.08);
+        }
+
+        body.dark-mode .route-alternatives {
+            border-top-color: rgba(255,255,255,0.08);
+        }
+
+        .route-alternative {
+            background: var(--light);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+
+        .route-alternative:hover {
+            transform: translateX(4px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        .route-alternative.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 16px rgba(91, 99, 245, 0.3);
+        }
+
+        body.dark-mode .route-alternative {
+            background: #2A2D31;
+        }
+
+        body.dark-mode .route-alternative.active {
+            background: var(--primary);
+        }
+
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .route-title {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .route-details {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .route-alternative.active .route-details {
+            opacity: 0.95;
+        }
+
+        /* Directions */
+        .directions {
+            padding: 20px;
+            background: var(--white);
+            border-top: 1px solid rgba(0,0,0,0.08);
+        }
+
+        body.dark-mode .directions {
+            background: #1A1D21;
+            border-top-color: rgba(255,255,255,0.08);
+        }
+
+        .directions h4 {
+            color: var(--dark);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .directions h4 i {
+            color: var(--primary);
+        }
+
+        .direction-step {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .direction-step:hover {
+            background: var(--light);
+            transform: translateX(4px);
+        }
+
+        body.dark-mode .direction-step:hover {
+            background: #2A2D31;
+        }
+
+        .step-number {
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 12px;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-instruction {
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .step-distance {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        /* Weather Info */
+        .weather-info {
+            background: linear-gradient(135deg, #667AFF 0%, #5B63F5 100%);
+            color: white;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+            box-shadow: 0 8px 20px rgba(91, 99, 245, 0.3);
+        }
+
+        .weather-info h4 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            opacity: 0.9;
+        }
+
+        .weather-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .weather-temp {
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .weather-desc {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        #weather-icon {
+            font-size: 48px;
+            opacity: 0.9;
+        }
+
+        /* Map Container */
+        .map-container {
+            flex: 1;
+            position: relative;
+            background: #E5E7EB;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Map Controls */
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .map-control-btn {
+            background: var(--white);
+            border: none;
+            border-radius: var(--radius);
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--gray);
+        }
+
+        .map-control-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 8px 20px rgba(91, 99, 245, 0.3);
+        }
+
+        .map-control-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        body.dark-mode .map-control-btn {
+            background: #2A2D31;
+            color: #8B95A1;
+        }
+
+        body.dark-mode .map-control-btn:hover,
+        body.dark-mode .map-control-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Nearby Categories */
+        .nearby-categories {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .nearby-category {
+            background: var(--light);
+            border-radius: var(--radius);
+            padding: 20px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+
+        .nearby-category:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(91, 99, 245, 0.3);
+        }
+
+        .nearby-category i {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: block;
+            color: var(--primary);
+            transition: var(--transition);
+        }
+
+        .nearby-category:hover i {
+            color: white;
+        }
+
+        .nearby-category div {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .nearby-category:hover div {
+            color: white;
+        }
+
+        body.dark-mode .nearby-category {
+            background: #2A2D31;
+        }
+
+        body.dark-mode .nearby-category i {
+            color: var(--primary-light);
+        }
+
+        /* Settings */
+        .settings-section {
+            background: var(--light);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        body.dark-mode .settings-section {
+            background: #2A2D31;
+        }
+
+        .settings-section h4 {
+            color: var(--dark);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-section h4 i {
+            color: var(--primary);
+        }
+
         .setting-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        
-        body.dark-mode .setting-item {
-            border-bottom-color: #47476b;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
         }
 
+        body.dark-mode .setting-item {
+            border-bottom-color: rgba(255,255,255,0.08);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .setting-label {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        /* Toggle Switch */
         .toggle-switch {
             position: relative;
-            width: 40px;
-            height: 20px;
-            background: #ccc;
-            border-radius: 10px;
+            width: 52px;
+            height: 28px;
+            background: #CBD5E1;
+            border-radius: 14px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
         }
-        
+
         body.dark-mode .toggle-switch {
-            background: #47476b;
+            background: #3A3D41;
         }
 
         .toggle-switch.active {
-            background: #667eea;
+            background: var(--primary);
         }
 
         .toggle-switch::after {
             content: '';
             position: absolute;
-            width: 16px;
-            height: 16px;
+            width: 24px;
+            height: 24px;
             background: white;
             border-radius: 50%;
             top: 2px;
             left: 2px;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .toggle-switch.active::after {
-            left: 22px;
+            left: 26px;
         }
 
-        .map-control-btn {
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 10px;
+        /* Favorites & History Items */
+        .favorite-item,
+        .history-item {
+            background: var(--light);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 12px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 2px solid transparent;
         }
 
-        .map-control-btn:hover {
-            border-color: #667eea;
-            background: #f8f9fa;
+        .favorite-item:hover,
+        .history-item:hover {
+            background: var(--white);
+            border-color: var(--primary);
+            transform: translateX(4px);
+            box-shadow: var(--shadow);
         }
-        
-        .map-control-btn.active {
-            background: #667eea;
+
+        body.dark-mode .favorite-item,
+        body.dark-mode .history-item {
+            background: #2A2D31;
+        }
+
+        body.dark-mode .favorite-item:hover,
+        body.dark-mode .history-item:hover {
+            background: #3A3D41;
+            border-color: var(--primary-light);
+        }
+
+        .favorite-info,
+        .history-info {
+            flex: 1;
+        }
+
+        .favorite-name,
+        .history-route {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+
+        .favorite-address,
+        .history-date {
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        .favorite-actions,
+        .history-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .favorite-actions button,
+        .history-actions button {
+            background: transparent;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: var(--transition);
+            font-size: 16px;
+        }
+
+        .favorite-actions button:hover,
+        .history-actions button:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Add Favorite Section */
+        .add-favorite-section {
+            background: var(--light);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        body.dark-mode .add-favorite-section {
+            background: #2A2D31;
+        }
+
+        .add-favorite-section input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            border: 2px solid #E2E8F0;
+            border-radius: var(--radius);
+            font-size: 14px;
+            transition: var(--transition);
+            background: var(--white);
+            color: var(--dark);
+        }
+
+        body.dark-mode .add-favorite-section input {
+            background: #1A1D21;
+            border-color: #3A3D41;
+        }
+
+        .add-favorite-section input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(91, 99, 245, 0.1);
+        }
+
+        .add-favorite-btn {
+            background: var(--primary);
             color: white;
-            border-color: #667eea;
-        }
-        
-        body.dark-mode .map-control-btn {
-            background-color: #2c2c54;
-            border-color: #47476b;
-            color: #e0e0e0;
-        }
-        
-        body.dark-mode .map-control-btn.active {
-            background: #8a9aff;
-            color: #1a1a2e;
-            border-color: #8a9aff;
-        }
-        
-        .search-section { margin-bottom: 25px; }
-        .input-group { position: relative; margin-bottom: 15px; }
-        .transport-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .transport-mode { border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; font-size: 12px; }
-        .transport-mode i { font-size: 20px; margin-bottom: 5px; display: block; }
-        .route-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
-        .route-option { border-radius: 8px; padding: 12px; text-align: center; cursor: pointer; font-size: 12px; }
-        .route-option i { margin-right: 5px; }
-        .advanced-options { border-radius: 8px; padding: 15px; margin-bottom: 20px; }
-        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
-        .checkbox-item { display: flex; align-items: center; font-size: 12px; }
-        .checkbox-item input { margin-right: 5px; }
-        .search-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; width: 100%; margin-bottom: 20px; }
-        .quick-locations { margin-bottom: 20px; }
-        .location-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-        .location-tag { border-radius: 15px; padding: 6px 12px; cursor: pointer; font-size: 11px; }
-        .results-section { background: white; border-top: 3px solid #667eea; max-height: 60vh; overflow-y: auto; }
-        body.dark-mode .results-section { background: #1e1e3f; border-top-color: #8a9aff; }
-        .route-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; }
-        body.dark-mode .route-summary { background: #2c2c54; border-bottom-color: #47476b; }
-        .summary-item .value { font-size: 18px; font-weight: bold; color: #667eea; }
-        body.dark-mode .summary-item .value { color: #8a9aff; }
-        .add-to-favorites { background: #667eea; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; }
-        body.dark-mode .add-to-favorites { background: #8a9aff; color: #1a1a2e; }
-        .route-alternatives { padding: 15px; }
-        .route-alternative { border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; }
-        .route-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .route-title { font-weight: 600; font-size: 14px; }
-        .route-badge { background: #667eea; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; }
-        .route-details { display: flex; gap: 15px; font-size: 12px; }
-        .directions { padding: 15px; background: white; }
-        body.dark-mode .directions { background: #1e1e3f; }
-        .direction-step { display: flex; align-items: flex-start; padding: 10px; border-bottom: 1px solid #f0f0f0; transition: all 0.3s ease; }
-        body.dark-mode .direction-step { border-bottom-color: #47476b; }
-        .step-number { background: #667eea; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 10px; font-size: 12px; flex-shrink: 0; }
-        body.dark-mode .step-number { background: #8a9aff; color: #1a1a2e; }
-        .step-content { flex: 1; }
-        .step-instruction { font-size: 13px; margin-bottom: 3px; }
-        .step-distance { font-size: 11px; }
-        .weather-info { background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .weather-details { display: flex; justify-content: space-between; align-items: center; }
-        .weather-temp { font-size: 24px; font-weight: bold; }
-        .weather-desc { font-size: 12px; opacity: 0.9; }
-        .map-controls { position: absolute; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
-        .nearby-places { margin-bottom: 20px; }
-        .nearby-categories { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .nearby-category { border-radius: 6px; padding: 8px; text-align: center; cursor: pointer; font-size: 11px; }
-        .favorites-list, .history-list { max-height: 300px; overflow-y: auto; }
-        .favorite-item, .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; border-left: 3px solid transparent; }
-        body.dark-mode .favorite-item, body.dark-mode .history-item { border-bottom-color: #47476b; }
-        .favorite-info, .history-info { flex: 1; }
-        .favorite-name, .history-route { font-weight: 600; font-size: 13px; }
-        .favorite-address, .history-date { font-size: 11px; margin-top: 2px; }
-        .favorite-actions { display: flex; gap: 5px; }
-        .favorite-actions button { background: none; border: none; color: #999; cursor: pointer; padding: 5px; border-radius: 3px; transition: all 0.3s ease; }
-        .favorite-actions button:hover { color: #e74c3c; background: #f0f2f5;}
-        body.dark-mode .favorite-actions button { color: #aaa; }
-        body.dark-mode .favorite-actions button:hover { color: #ff7675; background: #47476b; }
-        .add-favorite-section { margin-bottom: 20px; }
-        .add-favorite-section input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #e0e0e0; border-radius: 4px; }
-        .add-favorite-btn { background: #667eea; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; }
-        body.dark-mode .add-favorite-btn { background: #8a9aff; color: #1a1a2e; }
-        .settings-section { margin-bottom: 20px; }
-        .setting-label { font-size: 13px; }
-        
-        @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column; 
-            }
-
-            .map-container {
-                height: 45vh; 
-                min-height: 200px;
-                width: auto;
-                flex-shrink: 0;
-                transition: height 0.3s ease-in-out; 
-            }
-
-            .sidebar {
-                flex: 1;
-                height: 55vh; 
-                min-height: 350px;
-                width: auto; 
-                box-shadow: 0 -2px 20px rgba(0,0,0,0.1); 
-                transition: height 0.3s ease-in-out; 
-            }
-
-            .resizer {
-                display: block; 
-                height: 8px; 
-                background: #e0e0e0;
-                cursor: ns-resize;
-                z-index: 1001;
-                transition: background-color 0.3s;
-            }
-            body.dark-mode .resizer {
-                background: #47476b;
-            }
-            .resizer:hover {
-                background: #667eea;
-            }
-            body.dark-mode .resizer:hover {
-                background: #8a9aff;
-            }
-
-            .map-enlarged .map-container {
-                height: 70vh !important;
-            }
-            .map-enlarged .sidebar {
-                height: 30vh !important;
-            }
-
-            .header h1 { font-size: 1.5em; }
-            .header p { font-size: 0.8em; }
-            .nav-tab { font-size: 12px; padding: 12px; }
-            .input-group input { padding: 10px 35px 10px 10px; font-size: 13px; }
-            .input-group label { font-size: 12px; margin-bottom: 5px; }
-            .input-icon { right: 8px; }
-            .swap-btn { right: -15px; width: 30px; height: 30px; font-size: 14px; }
-            .transport-modes, .route-options, .nearby-categories { 
-                grid-template-columns: repeat(3, 1fr); 
-                gap: 8px;
-            }
-            .transport-mode, .route-option, .nearby-category { 
-                font-size: 11px; 
-                padding: 10px 5px;
-            }
-            .transport-mode i { font-size: 18px; margin-bottom: 3px; }
-            .search-btn { padding: 12px; font-size: 14px; }
-            .location-tag { font-size: 10px; padding: 5px 10px; }
-            .route-summary { grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
-            .summary-item .value { font-size: 16px; }
-            .summary-item .label { font-size: 11px; }
-            .direction-step { padding: 8px 5px; }
-            .step-number { width: 22px; height: 22px; font-size: 11px; margin-right: 8px; }
-            .step-instruction { font-size: 12px; }
-            .step-distance { font-size: 10px; }
-            .modal-content { width: 95%; padding: 20px; }
-            .modal-list-item { padding: 10px; font-size: 13px; }
-            .modal-close-btn { padding: 8px 12px; font-size: 13px; }
-            .destination-select-modal .modal-buttons { flex-direction: column; }
-            .destination-select-modal .modal-buttons button { width: 100%; padding: 12px; font-size: 14px; }
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: var(--transition);
         }
 
+        .add-favorite-btn:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 4px 12px rgba(91, 99, 245, 0.3);
+        }
+
+        /* Modals */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
             z-index: 2000;
             display: none;
             justify-content: center;
             align-items: center;
+            animation: fadeIn 0.3s ease-out;
         }
+
         .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
+            background: var(--white);
+            padding: 32px;
+            border-radius: var(--radius-xl);
             width: 90%;
-            max-width: 420px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            max-width: 480px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease-out;
         }
+
         body.dark-mode .modal-content {
-            background: #1e1e3f;
+            background: #1A1D21;
         }
+
         .modal-content h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: #667eea;
+            margin-bottom: 20px;
+            color: var(--dark);
+            font-size: 20px;
+            font-weight: 600;
         }
+
         .modal-list {
             list-style: none;
             padding: 0;
             margin: 0;
-            max-height: 40vh;
+            max-height: 400px;
             overflow-y: auto;
         }
+
         .modal-list-item {
-            padding: 12px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
             cursor: pointer;
-            transition: background-color 0.2s;
-            font-size: 14px;
+            transition: var(--transition);
+            border-radius: var(--radius);
+            margin-bottom: 8px;
         }
+
         body.dark-mode .modal-list-item {
-            border-bottom-color: #47476b;
+            border-bottom-color: rgba(255,255,255,0.08);
         }
+
         .modal-list-item:hover {
-            background-color: #f8f9fa;
+            background: var(--light);
+            padding-left: 24px;
         }
+
         body.dark-mode .modal-list-item:hover {
-            background-color: #2c2c54;
+            background: #2A2D31;
         }
-        .modal-list-item:last-child {
-            border-bottom: none;
-        }
+
         .modal-close-btn {
-            background: #e74c3c;
+            background: var(--danger);
             color: white;
             border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
+            padding: 12px 24px;
+            border-radius: var(--radius);
             cursor: pointer;
-            margin-top: 20px;
             float: right;
+            margin-top: 20px;
+            font-weight: 600;
+            transition: var(--transition);
         }
 
+        .modal-close-btn:hover {
+            background: #DC2626;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Destination Select Modal */
         .destination-select-modal .modal-content {
-            text-align: center;
             padding: 0;
-            border-radius: 16px;
             overflow: hidden;
-            border: 1px solid #e0e0e0;
+            max-width: 420px;
         }
-        body.dark-mode .destination-select-modal .modal-content {
-            border-color: #47476b;
-        }
+
         .destination-select-modal .modal-header {
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
+            text-align: center;
         }
+
         .destination-select-modal .modal-header .fa-map-signs {
-            font-size: 2em;
-            margin-bottom: 10px;
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.9;
         }
+
         .destination-select-modal .modal-body {
-            padding: 25px;
+            padding: 32px;
+            text-align: center;
         }
+
         #destination-select-title {
-            font-size: 1.2em;
+            font-size: 22px;
             font-weight: 600;
-            color: #333;
-            margin: 0 0 8px 0;
+            color: var(--dark);
+            margin-bottom: 8px;
         }
+
         #destination-select-address {
-            font-size: 0.9em;
-            color: #666;
-            margin: 0;
+            font-size: 14px;
+            color: var(--gray);
+            line-height: 1.5;
         }
-        body.dark-mode #destination-select-title { color: #e0e0e0; }
-        body.dark-mode #destination-select-address { color: #b0b0d0; }
 
         .destination-select-modal .modal-buttons {
+            padding: 0 32px 32px;
             display: flex;
             flex-direction: column;
             gap: 12px;
-            margin-top: 25px;
-            padding: 0 25px 25px 25px;
         }
+
         .destination-select-modal .modal-buttons button {
-            padding: 12px 20px;
-            border-radius: 8px;
-            border: 2px solid transparent;
+            padding: 14px 24px;
+            border-radius: var(--radius);
+            border: none;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 15px;
             font-weight: 600;
-            transition: all 0.3s;
+            transition: var(--transition);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
         }
-        .destination-select-modal .modal-buttons .set-end-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        .destination-select-modal .set-end-btn {
+            background: var(--primary);
             color: white;
         }
-        .destination-select-modal .modal-buttons .set-end-btn:hover {
+
+        .destination-select-modal .set-end-btn:hover {
+            background: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 20px rgba(91, 99, 245, 0.3);
         }
-        .destination-select-modal .modal-buttons .set-start-btn {
-            background: #fff;
-            color: #667eea;
-            border-color: #667eea;
+
+        .destination-select-modal .set-start-btn {
+            background: var(--white);
+            color: var(--primary);
+            border: 2px solid var(--primary);
         }
-        .destination-select-modal .modal-buttons .set-start-btn:hover {
-            background: #667eea;
+
+        .destination-select-modal .set-start-btn:hover {
+            background: var(--primary);
             color: white;
         }
-        .destination-select-modal .modal-buttons .cancel-btn {
-            background: #f1f3f5;
-            color: #868e96;
+
+        .destination-select-modal .cancel-btn {
+            background: var(--light);
+            color: var(--gray);
             border: none;
-            font-weight: 500;
-        }
-        .destination-select-modal .modal-buttons .cancel-btn:hover {
-            background: #e9ecef;
         }
 
-        body.dark-mode .destination-select-modal .modal-buttons .set-end-btn {
-            background: linear-gradient(135deg, #8a9aff 0%, #9b72d2 100%);
-            color: #1a1a2e;
-        }
-        body.dark-mode .destination-select-modal .modal-buttons .set-start-btn {
-            background: #1e1e3f;
-            color: #8a9aff;
-            border-color: #8a9aff;
-        }
-        body.dark-mode .destination-select-modal .modal-buttons .set-start-btn:hover {
-            background: #8a9aff;
-            color: #1e1e3f;
-        }
-        body.dark-mode .destination-select-modal .modal-buttons .cancel-btn {
-            background: #2c2c54;
-            color: #b0b0d0;
-        }
-        body.dark-mode .destination-select-modal .modal-buttons .cancel-btn:hover {
-            background: #47476b;
+        .destination-select-modal .cancel-btn:hover {
+            background: #E2E8F0;
         }
 
+        body.dark-mode .destination-select-modal .set-start-btn {
+            background: #2A2D31;
+            color: var(--primary-light);
+            border-color: var(--primary-light);
+        }
+
+        body.dark-mode .destination-select-modal .cancel-btn {
+            background: #2A2D31;
+            color: #8B95A1;
+        }
+
+        body.dark-mode .destination-select-modal .cancel-btn:hover {
+            background: #3A3D41;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 60vh;
+                order: 2;
+                box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
+                border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+                transition: height 0.3s ease-in-out;
+            }
+
+            .map-container {
+                height: 40vh;
+                order: 1;
+            }
+
+            /* Mobile Resizer */
+            .resizer {
+                display: block;
+                height: 6px;
+                background: #E2E8F0;
+                cursor: ns-resize;
+                position: relative;
+                z-index: 1001;
+            }
+
+            .resizer::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 40px;
+                height: 4px;
+                background: #94A3B8;
+                border-radius: 2px;
+            }
+
+            body.dark-mode .resizer {
+                background: #1A1D21;
+            }
+
+            body.dark-mode .resizer::before {
+                background: #4A5568;
+            }
+
+            /* Map Enlarged State */
+            .map-enlarged .map-container {
+                height: 75vh !important;
+            }
+
+            .map-enlarged .sidebar {
+                height: 25vh !important;
+            }
+
+            /* Mobile Header */
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.6em;
+            }
+
+            .header p {
+                font-size: 0.85em;
+            }
+
+            /* Mobile Tabs */
+            .nav-tabs {
+                padding: 6px;
+                gap: 2px;
+            }
+
+            .nav-tab {
+                font-size: 12px;
+                padding: 10px 12px;
+                min-width: 70px;
+            }
+
+            /* Mobile Content */
+            .tab-content {
+                padding: 16px;
+            }
+
+            /* Mobile Inputs */
+            .input-group {
+                margin-bottom: 16px;
+            }
+
+            .input-group input {
+                padding: 12px 40px 12px 14px;
+                font-size: 14px;
+            }
+
+            .input-icon {
+                right: 12px;
+                font-size: 16px;
+            }
+
+            .swap-btn {
+                right: -20px;
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+
+            /* Mobile Transport Modes */
+            .transport-modes {
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+
+            .transport-mode {
+                padding: 12px 4px;
+            }
+
+            .transport-mode i {
+                font-size: 24px;
+                margin-bottom: 4px;
+            }
+
+            .transport-mode div {
+                font-size: 11px;
+            }
+
+            /* Mobile Route Options */
+            .route-options {
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+
+            .route-option {
+                padding: 12px;
+                font-size: 13px;
+            }
+
+            .route-option i {
+                font-size: 16px;
+            }
+
+            /* Mobile Search Button */
+            .search-btn {
+                padding: 14px;
+                font-size: 15px;
+                margin-bottom: 16px;
+            }
+
+            /* Mobile Quick Locations */
+            .location-tag {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            /* Mobile Results */
+            .route-summary {
+                gap: 12px;
+                padding: 16px;
+            }
+
+            .summary-item .value {
+                font-size: 20px;
+            }
+
+            .summary-item .label {
+                font-size: 11px;
+            }
+
+            /* Mobile Weather */
+            .weather-info {
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+
+            .weather-temp {
+                font-size: 28px;
+            }
+
+            .weather-desc {
+                font-size: 12px;
+            }
+
+            #weather-icon {
+                font-size: 36px;
+            }
+
+            /* Mobile Map Controls */
+            .map-controls {
+                top: 16px;
+                right: 16px;
+                gap: 8px;
+            }
+
+            .map-control-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            /* Mobile Nearby Categories */
+            .nearby-categories {
+                gap: 8px;
+            }
+
+            .nearby-category {
+                padding: 16px 4px;
+            }
+
+            .nearby-category i {
+                font-size: 24px;
+            }
+
+            .nearby-category div {
+                font-size: 11px;
+            }
+
+            /* Mobile Modals */
+            .modal-content {
+                width: 95%;
+                padding: 24px;
+            }
+
+            .destination-select-modal .modal-header {
+                padding: 32px;
+            }
+
+            .destination-select-modal .modal-header .fa-map-signs {
+                font-size: 36px;
+            }
+
+            .destination-select-modal .modal-body {
+                padding: 24px;
+            }
+
+            #destination-select-title {
+                font-size: 18px;
+            }
+
+            #destination-select-address {
+                font-size: 13px;
+            }
+
+            .destination-select-modal .modal-buttons {
+                padding: 0 24px 24px;
+            }
+
+            .destination-select-modal .modal-buttons button {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+
+        /* Tablet Styles */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .sidebar {
+                width: 400px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .transport-mode i {
+                font-size: 26px;
+            }
+
+            .nearby-category i {
+                font-size: 28px;
+            }
+        }
+
+        /* Large Desktop Styles */
+        @media (min-width: 1440px) {
+            .sidebar {
+                width: 520px;
+            }
+
+            .tab-content {
+                padding: 32px;
+            }
+
+            .header {
+                padding: 28px;
+            }
+
+            .header h1 {
+                font-size: 2.2em;
+            }
+
+            .input-group input {
+                padding: 16px 52px 16px 18px;
+                font-size: 16px;
+            }
+
+            .transport-mode {
+                padding: 20px 10px;
+            }
+
+            .transport-mode i {
+                font-size: 32px;
+            }
+
+            .search-btn {
+                padding: 18px;
+                font-size: 17px;
+            }
+        }
+
+        /* Animations */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .loading {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        /* Accessibility */
+        :focus-visible {
+            outline: 3px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        button:focus-visible,
+        input:focus-visible {
+            outline: 3px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Print Styles */
+        @media print {
+            .sidebar {
+                width: 100%;
+                box-shadow: none;
+            }
+
+            .map-container {
+                display: none;
+            }
+
+            .nav-tabs,
+            .weather-info,
+            .advanced-options,
+            .quick-locations,
+            .add-to-favorites {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="main-container">
         <div class="sidebar">
             <div class="header">
-                <h1><i class="fas fa-map-marked-alt"></i> 기웅네비</h1>
-                <p>전문 네비게이션 서비스</p>
+                <h1><i class="fas fa-location-dot"></i> 기웅네비</h1>
+                <p>당신의 스마트한 길 안내 파트너</p>
             </div>
 
             <div class="nav-tabs">
-                <button class="nav-tab active" data-tab="route">길찾기</button>
-                <button class="nav-tab" data-tab="nearby">주변</button>
-                <button class="nav-tab" data-tab="favorites">즐겨찾기</button>
-                <button class="nav-tab" data-tab="history">기록</button>
-                <button class="nav-tab" data-tab="settings">설정</button>
+                <button class="nav-tab active" data-tab="route"><i class="fas fa-route"></i> 길찾기</button>
+                <button class="nav-tab" data-tab="nearby"><i class="fas fa-map-marker-alt"></i> 주변</button>
+                <button class="nav-tab" data-tab="favorites"><i class="fas fa-star"></i> 즐겨찾기</button>
+                <button class="nav-tab" data-tab="history"><i class="fas fa-history"></i> 기록</button>
+                <button class="nav-tab" data-tab="settings"><i class="fas fa-cog"></i> 설정</button>
             </div>
 
             <div class="tab-content active" id="route-tab">
@@ -744,7 +1794,7 @@
                             <div class="weather-desc">날씨 정보 로딩 중...</div>
                         </div>
                         <div>
-                            <i id="weather-icon" class="fas fa-spinner fa-spin" style="font-size: 30px;"></i>
+                            <i id="weather-icon" class="fas fa-spinner fa-spin"></i>
                         </div>
                     </div>
                 </div>
@@ -753,11 +1803,11 @@
                     <div class="input-group">
                         <label for="from">출발지</label>
                         <input type="text" id="from" placeholder="현재 위치 또는 주소 입력">
-                        <i class="fas fa-map-marker-alt input-icon"></i>
+                        <i class="fas fa-location-crosshairs input-icon"></i>
                     </div>
                     <div class="input-group">
                         <label for="to">도착지</label>
-                        <input type="text" id="to" placeholder="목적지 입력">
+                        <input type="text" id="to" placeholder="목적지를 입력하세요">
                         <i class="fas fa-search input-icon"></i>
                         <button class="swap-btn" onclick="swapLocations()">
                             <i class="fas fa-exchange-alt"></i>
@@ -766,26 +1816,51 @@
                 </div>
 
                 <div class="transport-modes">
-                    <div class="transport-mode active" data-mode="car"><i class="fas fa-car"></i><div>자동차</div></div>
-                    <div class="transport-mode" data-mode="walk"><i class="fas fa-walking"></i><div>도보</div></div>
-                    <div class="transport-mode" data-mode="bike"><i class="fas fa-bicycle"></i><div>자전거</div></div>
-                </div>
-
-                <div class="route-options">
-                    <div class="route-option active" data-option="fastest"><i class="fas fa-tachometer-alt"></i> 빠른 길</div>
-                    <div class="route-option" data-option="shortest"><i class="fas fa-route"></i> 짧은 길</div>
-                </div>
-
-                <div class="advanced-options">
-                    <h4><i class="fas fa-cog"></i> 상세 옵션</h4>
-                    <div class="checkbox-group">
-                        <div class="checkbox-item"><input type="checkbox" id="avoid-tolls"><label for="avoid-tolls">유료도로 회피</label></div>
-                        <div class="checkbox-item"><input type="checkbox" id="avoid-highways"><label for="avoid-highways">고속도로 회피</label></div>
-                        <div class="checkbox-item"><input type="checkbox" id="avoid-ferries"><label for="avoid-ferries">페리 회피</label></div>
+                    <div class="transport-mode active" data-mode="car">
+                        <i class="fas fa-car"></i>
+                        <div>자동차</div>
+                    </div>
+                    <div class="transport-mode" data-mode="walk">
+                        <i class="fas fa-walking"></i>
+                        <div>도보</div>
+                    </div>
+                    <div class="transport-mode" data-mode="bike">
+                        <i class="fas fa-bicycle"></i>
+                        <div>자전거</div>
                     </div>
                 </div>
 
-                <button class="search-btn" id="search-btn" onclick="searchRoute()"><i class="fas fa-search"></i> 길찾기</button>
+                <div class="route-options">
+                    <div class="route-option active" data-option="fastest">
+                        <i class="fas fa-bolt"></i> 빠른 길
+                    </div>
+                    <div class="route-option" data-option="shortest">
+                        <i class="fas fa-ruler"></i> 짧은 길
+                    </div>
+                </div>
+
+                <div class="advanced-options">
+                    <h4><i class="fas fa-sliders-h"></i> 상세 옵션</h4>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="avoid-tolls">
+                            <label for="avoid-tolls">유료도로 회피</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="avoid-highways">
+                            <label for="avoid-highways">고속도로 회피</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="avoid-ferries">
+                            <label for="avoid-ferries">페리 회피</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="search-btn" id="search-btn" onclick="searchRoute()">
+                    <i class="fas fa-search"></i>
+                    <span>길찾기 시작</span>
+                </button>
 
                 <div class="quick-locations">
                     <h4><i class="fas fa-star"></i> 인기 목적지</h4>
@@ -794,34 +1869,64 @@
                         <span class="location-tag" onclick="setQuickLocation('강남역')">🚇 강남역</span>
                         <span class="location-tag" onclick="setQuickLocation('명동')">🛍️ 명동</span>
                         <span class="location-tag" onclick="setQuickLocation('인천공항')">✈️ 인천공항</span>
+                        <span class="location-tag" onclick="setQuickLocation('남산타워')">🗼 남산타워</span>
                     </div>
                 </div>
 
                 <div class="results-section" id="results" style="display: none;">
                     <div class="route-summary">
-                        <div class="summary-item"><div class="value" id="total-time">--</div><div class="label">예상 시간</div></div>
-                        <div class="summary-item"><div class="value" id="total-distance">--</div><div class="label">총 거리</div></div>
-                        <div class="summary-item"><div class="value" id="total-cost">--</div><div class="label">예상 비용</div></div>
+                        <div class="summary-item">
+                            <div class="value" id="total-time">--</div>
+                            <div class="label">예상 시간</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="value" id="total-distance">--</div>
+                            <div class="label">총 거리</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="value" id="total-cost">--</div>
+                            <div class="label">예상 비용</div>
+                        </div>
                     </div>
-                    <button class="add-to-favorites" onclick="addToFavorites()">즐겨찾기에 추가</button>
+                    <button class="add-to-favorites" onclick="addToFavorites()">
+                        <i class="fas fa-heart"></i> 즐겨찾기에 추가
+                    </button>
                     <div class="route-alternatives" id="route-alternatives"></div>
                     <div class="directions" id="directions">
-                        <h4><i class="fas fa-list-ol"></i> 상세 안내</h4>
+                        <h4><i class="fas fa-list-ol"></i> 상세 경로 안내</h4>
                         <div id="directions-list"></div>
                     </div>
                 </div>
             </div>
 
             <div class="tab-content" id="nearby-tab">
-                 <div class="nearby-places">
-                    <h4><i class="fas fa-map-marker-alt"></i> 주변 장소</h4>
+                <div class="nearby-places">
+                    <h4><i class="fas fa-map-marker-alt"></i> 주변 검색</h4>
                     <div class="nearby-categories">
-                        <div class="nearby-category" onclick="searchNearby('restaurant')"><i class="fas fa-utensils"></i><div>음식점</div></div>
-                        <div class="nearby-category" onclick="searchNearby('fuel')"><i class="fas fa-gas-pump"></i><div>주유소</div></div>
-                        <div class="nearby-category" onclick="searchNearby('hospital')"><i class="fas fa-hospital"></i><div>병원</div></div>
-                        <div class="nearby-category" onclick="searchNearby('bank')"><i class="fas fa-university"></i><div>은행</div></div>
-                        <div class="nearby-category" onclick="searchNearby('pharmacy')"><i class="fas fa-pills"></i><div>약국</div></div>
-                        <div class="nearby-category" onclick="searchNearby('parking')"><i class="fas fa-parking"></i><div>주차장</div></div>
+                        <div class="nearby-category" onclick="searchNearby('restaurant')">
+                            <i class="fas fa-utensils"></i>
+                            <div>음식점</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('fuel')">
+                            <i class="fas fa-gas-pump"></i>
+                            <div>주유소</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('hospital')">
+                            <i class="fas fa-hospital"></i>
+                            <div>병원</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('bank')">
+                            <i class="fas fa-university"></i>
+                            <div>은행</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('pharmacy')">
+                            <i class="fas fa-pills"></i>
+                            <div>약국</div>
+                        </div>
+                        <div class="nearby-category" onclick="searchNearby('parking')">
+                            <i class="fas fa-parking"></i>
+                            <div>주차장</div>
+                        </div>
                     </div>
                 </div>
                 <div id="nearby-results"></div>
@@ -831,7 +1936,9 @@
                 <div class="add-favorite-section">
                     <input type="text" id="favorite-name" placeholder="즐겨찾기 이름">
                     <input type="text" id="favorite-address" placeholder="주소">
-                    <button class="add-favorite-btn" onclick="addCustomFavorite()">추가</button>
+                    <button class="add-favorite-btn" onclick="addCustomFavorite()">
+                        <i class="fas fa-plus"></i> 추가하기
+                    </button>
                 </div>
                 <div class="favorites-list" id="favorites-list"></div>
             </div>
@@ -842,20 +1949,26 @@
 
             <div class="tab-content" id="settings-tab">
                 <div class="settings-section">
-                    <h4><i class="fas fa-map"></i> 지도 설정</h4>
+                    <h4><i class="fas fa-palette"></i> 디스플레이 설정</h4>
                     <div class="setting-item">
-                        <div class="setting-label">야간 모드</div>
+                        <div class="setting-label">다크 모드</div>
                         <div class="toggle-switch" id="night-mode-toggle" onclick="toggleNightMode()"></div>
                     </div>
                 </div>
             </div>
         </div>
+        
         <div class="resizer" id="resizer"></div>
+        
         <div class="map-container">
             <div id="map"></div>
             <div class="map-controls">
-                <button class="map-control-btn" onclick="panToCurrentLocation()"><i class="fas fa-crosshairs"></i></button>
-                <button class="map-control-btn" onclick="toggleMapControl(this, 'satellite')"><i class="fas fa-satellite"></i></button>
+                <button class="map-control-btn" onclick="panToCurrentLocation()">
+                    <i class="fas fa-crosshairs"></i>
+                </button>
+                <button class="map-control-btn" onclick="toggleMapControl(this, 'satellite')">
+                    <i class="fas fa-satellite"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -864,7 +1977,9 @@
         <div class="modal-content">
             <h3 id="modal-title">위치 선택</h3>
             <ul class="modal-list" id="modal-list"></ul>
-            <button class="modal-close-btn" onclick="closeModal()">취소</button>
+            <button class="modal-close-btn" onclick="closeModal()">
+                <i class="fas fa-times"></i> 취소
+            </button>
         </div>
     </div>
 
@@ -878,8 +1993,12 @@
                 <p id="destination-select-address"></p>
             </div>
             <div class="modal-buttons">
-                <button class="set-end-btn" onclick="selectDestination('end')"><i class="fas fa-flag-checkered"></i> 도착지로 설정</button>
-                <button class="set-start-btn" onclick="selectDestination('start')"><i class="fas fa-map-marker-alt"></i> 출발지로 설정</button>
+                <button class="set-end-btn" onclick="selectDestination('end')">
+                    <i class="fas fa-flag-checkered"></i> 도착지로 설정
+                </button>
+                <button class="set-start-btn" onclick="selectDestination('start')">
+                    <i class="fas fa-map-marker-alt"></i> 출발지로 설정
+                </button>
                 <button class="cancel-btn" onclick="closeDestinationSelectModal()">취소</button>
             </div>
         </div>
@@ -889,6 +2008,7 @@
     <script>
         const ORS_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjY2Y2I3ZjQzMmJlMzQ1YmRhOTYxZWFmNDExZjkxYzZkIiwiaCI6Im11cm11cjY0In0=';
 
+        // Map initialization
         var map = L.map('map').setView([37.5665, 126.9780], 13);
         var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
         var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' });
@@ -897,18 +2017,22 @@
         let currentBaseLayer = osmLayer;
         currentBaseLayer.addTo(map);
         
+        // Custom marker icons with modern design
         const createFlagIcon = (color) => {
             return L.divIcon({
-                html: `<i class="fas fa-flag" style="color: ${color}; font-size: 24px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);"></i>`,
-                className: 'map-flag-icon',
-                iconSize: [24, 24],
-                iconAnchor: [0, 24],
-                popupAnchor: [0, -24]
+                html: `<div style="background: ${color}; width: 32px; height: 32px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 4px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-circle" style="color: white; font-size: 12px; transform: rotate(45deg);"></i>
+                </div>`,
+                className: 'custom-marker',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32],
+                popupAnchor: [0, -32]
             });
         };
-        const startIcon = createFlagIcon('#2ecc71'); // Green
-        const endIcon = createFlagIcon('#e74c3c');   // Red
+        const startIcon = createFlagIcon('#51CF66');
+        const endIcon = createFlagIcon('#FF6B6B');
 
+        // State variables
         let currentRoutes = [];
         let currentPolylines = [];
         let startMarker = null;
@@ -919,6 +2043,7 @@
         let selectedEnd = null;
         let pendingDestinationSelection = null;
 
+        // Geocoding function
         const geocode = async (query) => {
             if (!query) return null;
             try {
@@ -937,6 +2062,7 @@
             }
         };
 
+        // Modal functionality
         const modal = document.getElementById('location-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalList = document.getElementById('modal-list');
@@ -966,15 +2092,17 @@
             if (resolvePromise) resolvePromise(null);
         }
 
+        // Main search route function
         async function searchRoute() {
             const button = document.getElementById('search-btn');
             button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 위치 확인 중..';
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>위치 확인 중...</span>';
             document.getElementById('results').style.display = 'none';
             
             let fromInput = document.getElementById('from');
             let toInput = document.getElementById('to');
 
+            // Handle current location
             if (fromInput.value === '' || fromInput.value.includes('현재 위치')) {
                 selectedStart = await new Promise(resolve => {
                     navigator.geolocation.getCurrentPosition(
@@ -983,30 +2111,41 @@
                     );
                 });
                 if (!selectedStart) {
-                    alert('현재 위치를 가져올 수 없습니다. 출발지를 직접 입력해주세요.');
+                    showNotification('현재 위치를 가져올 수 없습니다. 출발지를 직접 입력해주세요.', 'error');
                     resetButton(); return;
                 }
             } else if (!selectedStart || selectedStart.display_name !== fromInput.value) {
                 const startResults = await geocode(fromInput.value);
-                if (!startResults) { alert('출발지를 찾을 수 없습니다.'); resetButton(); return; }
+                if (!startResults) { 
+                    showNotification('출발지를 찾을 수 없습니다.', 'error'); 
+                    resetButton(); return; 
+                }
                 selectedStart = startResults.length > 1 ? await showLocationPicker(startResults, '출발지 선택') : startResults[0];
             }
 
             if (!selectedStart) { resetButton(); return; }
             fromInput.value = selectedStart.display_name;
 
-            if (!toInput.value) { alert('도착지를 입력하세요.'); resetButton(); return; }
+            // Handle destination
+            if (!toInput.value) { 
+                showNotification('도착지를 입력하세요.', 'warning'); 
+                resetButton(); return; 
+            }
             if (!selectedEnd || selectedEnd.display_name !== toInput.value) {
                 const endResults = await geocode(toInput.value);
-                if (!endResults) { alert('도착지를 찾을 수 없습니다.'); resetButton(); return; }
+                if (!endResults) { 
+                    showNotification('도착지를 찾을 수 없습니다.', 'error'); 
+                    resetButton(); return; 
+                }
                 selectedEnd = endResults.length > 1 ? await showLocationPicker(endResults, '도착지 선택') : endResults[0];
             }
             
             if (!selectedEnd) { resetButton(); return; }
             toInput.value = selectedEnd.display_name;
             
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 길찾기 중..';
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>경로 탐색 중...</span>';
             
+            // Get route parameters
             const mode = document.querySelector('.transport-mode.active').dataset.mode;
             const option = document.querySelector('.route-option.active').dataset.option;
             
@@ -1025,10 +2164,10 @@
             const startCoords = [selectedStart.lon, selectedStart.lat];
             const endCoords = [selectedEnd.lon, selectedEnd.lat];
             
-            // ▼▼▼ [수정 1] 장거리 경로 요청 시 API 오류 방지를 위한 로직 ▼▼▼
+            // Check distance for API limitations
             const startLatLng = L.latLng(selectedStart.lat, selectedStart.lon);
             const endLatLng = L.latLng(selectedEnd.lat, selectedEnd.lon);
-            const distance = startLatLng.distanceTo(endLatLng); // 거리를 미터 단위로 계산
+            const distance = startLatLng.distanceTo(endLatLng);
 
             const requestBody = {
                 coordinates: [startCoords, endCoords],
@@ -1037,11 +2176,10 @@
                 options: { avoid_features: avoidFeatures }
             };
 
-            // 거리가 100km (100,000m) 미만일 때만 대안 경로를 요청
+            // Only request alternatives for shorter distances
             if (distance < 100000) {
                 requestBody.alternative_routes = { target_count: 3, share_factor: 0.2, weight_factor: 1.4 };
             }
-            // ▲▲▲ [수정 1] 종료 ▲▲▲
             
             try {
                 const res = await fetch(`https://api.openrouteservice.org/v2/directions/${profile}/geojson`, {
@@ -1061,6 +2199,7 @@
                 
                 const data = await res.json();
                 
+                // Remove duplicates
                 const uniqueRoutes = new Map();
                 data.features.forEach(feature => {
                     const geometryString = JSON.stringify(feature.geometry.coordinates);
@@ -1078,30 +2217,34 @@
                 }));
 
                 if (currentRoutes.length === 0) {
-                    throw new Error("선택된 위치 간의 경로를 찾을 수 없습니다. 다른 경로 옵션을 시도해보세요.");
+                    throw new Error("선택된 위치 간의 경로를 찾을 수 없습니다.");
                 }
 
                 displayRouteResults();
                 saveToHistory(selectedStart.display_name, selectedEnd.display_name);
+                showNotification('경로를 찾았습니다!', 'success');
 
             } catch (err) {
-                alert('경로 탐색 오류: ' + err.message);
+                showNotification('경로 탐색 오류: ' + err.message, 'error');
                 document.getElementById('results').style.display = 'none';
             } finally {
                 resetButton();
             }
         }
         
+        // Display route results
         function displayRouteResults() {
             document.getElementById('results').style.display = 'block';
             const alternativesContainer = document.getElementById('route-alternatives');
             alternativesContainer.innerHTML = '';
             
+            // Clear existing markers and routes
             if (startMarker) map.removeLayer(startMarker);
             if (endMarker) map.removeLayer(endMarker);
             currentPolylines.forEach(p => map.removeLayer(p));
             currentPolylines = [];
             
+            // Add markers
             startMarker = L.marker([selectedStart.lat, selectedStart.lon], { icon: startIcon }).addTo(map)
                 .bindPopup(`<b>출발지</b><br>${selectedStart.display_name}`);
             endMarker = L.marker([selectedEnd.lat, selectedEnd.lon], { icon: endIcon }).addTo(map);
@@ -1111,41 +2254,45 @@
                 [selectedEnd.lat, selectedEnd.lon]
             ]);
 
+            // Display routes
             currentRoutes.forEach((route, index) => {
                 const leafletCoords = route.geometry.map(coord => [coord[1], coord[0]]);
                 const polyline = L.polyline(leafletCoords, {
-                    color: index === 0 ? '#667eea' : '#888',
-                    weight: index === 0 ? 7 : 5,
-                    opacity: index === 0 ? 0.9 : 0.7,
+                    color: index === 0 ? '#5B63F5' : '#94A3B8',
+                    weight: index === 0 ? 8 : 6,
+                    opacity: index === 0 ? 0.9 : 0.6,
+                    smoothFactor: 1.5
                 }).addTo(map);
 
                 polyline.on('click', () => selectAlternative(index)); 
                 currentPolylines.push(polyline);
                 allBounds.extend(polyline.getBounds());
 
+                // Create route alternative UI
                 const alt = document.createElement('div');
                 alt.className = 'route-alternative';
                 alt.dataset.index = index; 
                 alt.innerHTML = `
                     <div class="route-header">
-                        <div class="route-title">${index === 0 ? '추천 경로' : `대안 ${index}`}</div>
+                        <div class="route-title">${index === 0 ? '추천 경로' : `대안 경로 ${index}`}</div>
                     </div>
                     <div class="route-details">
                         <span><i class="fas fa-clock"></i> ${Math.round(route.summary.duration / 60)}분</span>
-                        <span><i class="fas fa-road"></i> ${(route.summary.distance / 1000).toFixed(1)}km</span>
+                        <span><i class="fas fa-route"></i> ${(route.summary.distance / 1000).toFixed(1)}km</span>
                     </div>`;
                 alt.onclick = () => selectAlternative(index);
                 alternativesContainer.appendChild(alt);
             });
 
             if (currentRoutes.length > 0) {
-                 map.fitBounds(allBounds.pad(0.1));
+                map.fitBounds(allBounds.pad(0.1));
             }
            
             selectAlternative(0); 
             enlargeMap();
         }
 
+        // Select route alternative
         function selectAlternative(index) {
             document.querySelectorAll('.route-alternative').forEach((alt, i) => {
                 alt.classList.toggle('active', parseInt(alt.dataset.index) === index);
@@ -1153,9 +2300,9 @@
             
             currentPolylines.forEach((polyline, i) => {
                 if (i === index) {
-                    polyline.setStyle({ color: '#667eea', weight: 7, opacity: 0.9 }).bringToFront();
+                    polyline.setStyle({ color: '#5B63F5', weight: 8, opacity: 0.9 }).bringToFront();
                 } else {
-                    polyline.setStyle({ color: '#888', weight: 5, opacity: 0.7 });
+                    polyline.setStyle({ color: '#94A3B8', weight: 6, opacity: 0.6 });
                 }
             });
 
@@ -1173,17 +2320,22 @@
             document.getElementById('total-distance').textContent = `${distance}km`;
 
             const popupContent = `
-                <b>도착지: ${selectedEnd.display_name}</b>
-                <div class="route-popup-info">
-                    <div><i class="fa-solid fa-clock"></i> <b>시간:</b> ${time}분</div>
-                    <div><i class="fa-solid fa-road"></i> <b>거리:</b> ${distance}km</div>
-                    <div><i class="fa-solid fa-coins"></i> <b>비용:</b> ₩${cost.toLocaleString()}</div>
+                <div style="font-family: 'Noto Sans KR'; padding: 8px;">
+                    <h4 style="margin: 0 0 12px 0; color: #5B63F5; font-size: 16px;">
+                        <i class="fas fa-flag-checkered"></i> ${selectedEnd.display_name}
+                    </h4>
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
+                        <div><i class="fas fa-clock" style="color: #5B63F5; width: 20px;"></i> <b>시간:</b> ${time}분</div>
+                        <div><i class="fas fa-route" style="color: #5B63F5; width: 20px;"></i> <b>거리:</b> ${distance}km</div>
+                        <div><i class="fas fa-coins" style="color: #5B63F5; width: 20px;"></i> <b>비용:</b> ₩${cost.toLocaleString()}</div>
+                    </div>
                 </div>
             `;
             if (endMarker) {
                 endMarker.bindPopup(popupContent).openPopup();
             }
 
+            // Display directions
             const directionsList = document.getElementById('directions-list');
             directionsList.innerHTML = '';
             route.segments?.[0]?.steps?.forEach((step, i) => {
@@ -1199,35 +2351,36 @@
             });
         }
 
+        // Reset search button
         function resetButton() {
-            document.getElementById('search-btn').disabled = false;
-            document.getElementById('search-btn').innerHTML = '<i class="fas fa-search"></i> 길찾기';
+            const button = document.getElementById('search-btn');
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-search"></i> <span>길찾기 시작</span>';
         }
 
+        // Search nearby places
         async function searchNearby(category) {
             const results = document.getElementById('nearby-results');
-            results.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+            results.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fas fa-spinner fa-spin fa-3x" style="color: #5B63F5;"></i><p style="margin-top: 16px; color: #6C757D;">주변 장소 검색 중...</p></div>';
             nearbyMarkers.forEach(m => map.removeLayer(m));
             nearbyMarkers = [];
 
-            // ▼▼▼ [수정 2] 주변 검색 기준을 지도 중심점 반경으로 변경 ▼▼▼
             const center = map.getCenter();
-            const radius = 5000; // 5km (5000m) 반경
+            const radius = 5000;
 
-            // Overpass API 쿼리를 Bounding Box 대신 'around' 필터를 사용하도록 수정
             const query = `[out:json][timeout:25];(
                 node["amenity"="${category}"](around:${radius},${center.lat},${center.lng});
                 way["amenity"="${category}"](around:${radius},${center.lat},${center.lng});
                 relation["amenity"="${category}"](around:${radius},${center.lat},${center.lng});
             );out center;`;
-            // ▲▲▲ [수정 2] 종료 ▲▲▲
 
             try {
                 const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
                 const data = await res.json();
                 results.innerHTML = '';
+                
                 if(data.elements.length === 0) {
-                    results.innerHTML = '<p style="text-align:center; padding: 10px;">주변에 결과가 없습니다.</p>';
+                    results.innerHTML = '<div style="text-align:center; padding: 40px; color: #6C757D;"><i class="fas fa-map-marked-alt fa-3x" style="margin-bottom: 16px;"></i><p>주변에 검색 결과가 없습니다.</p></div>';
                     return;
                 }
                 
@@ -1253,7 +2406,7 @@
                     if (item.address === '주소 정보 없음') {
                         div.style.cursor = 'not-allowed';
                         div.style.opacity = '0.6';
-                        div.onclick = () => alert('정확한 주소 정보가 없는 장소는 출발지/도착지로 설정할 수 없습니다.');
+                        div.onclick = () => showNotification('정확한 주소 정보가 없는 장소는 선택할 수 없습니다.', 'warning');
                     } else {
                         div.style.cursor = 'pointer';
                         div.onclick = () => showDestinationSelectModal(item.name, item.address, item.lat, item.lon);
@@ -1262,7 +2415,7 @@
                     div.innerHTML = `
                         <div class="favorite-info">
                             <div class="favorite-name">${item.name}</div>
-                            <div class="favorite-address">${item.address === '주소 정보 없음' ? '주소 정보 없음' : `거리: ${item.dist.toFixed(1)}km`}</div>
+                            <div class="favorite-address">${item.address === '주소 정보 없음' ? '주소 정보 없음' : `${item.dist.toFixed(1)}km 거리`}</div>
                         </div>
                         <div class="favorite-actions"><i class="fas fa-chevron-right"></i></div>`;
                     results.appendChild(div);
@@ -1271,12 +2424,15 @@
                         .bindPopup(`<b>${item.name}</b><br>${item.address}<br>거리: ${item.dist.toFixed(1)}km`);
                     nearbyMarkers.push(marker);
                 });
+
+                showNotification(`${placeItems.length}개의 장소를 찾았습니다.`, 'success');
             } catch (err) {
-                alert('주변 검색 오류: ' + err.message);
-                results.innerHTML = '<p style="text-align:center; padding: 10px;">검색에 실패했습니다.</p>';
+                showNotification('주변 검색 오류: ' + err.message, 'error');
+                results.innerHTML = '<div style="text-align:center; padding: 40px; color: #DC2626;"><i class="fas fa-exclamation-circle fa-3x" style="margin-bottom: 16px;"></i><p>검색에 실패했습니다.</p></div>';
             }
         }
-        
+
+        // Toggle night mode
         function toggleNightMode() {
             const body = document.body;
             const toggle = document.getElementById('night-mode-toggle');
@@ -1287,8 +2443,11 @@
             map.removeLayer(currentBaseLayer);
             currentBaseLayer = body.classList.contains('dark-mode') ? darkLayer : osmLayer;
             if (!isSatelliteActive) currentBaseLayer.addTo(map);
+            
+            localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
         }
 
+        // Toggle map control
         function toggleMapControl(button, type) {
             button.classList.toggle('active');
             if (type === 'satellite') {
@@ -1302,105 +2461,42 @@
             }
         }
         
+        // Pan to current location
         function panToCurrentLocation() {
+            const button = event.currentTarget;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
             navigator.geolocation.getCurrentPosition(pos => {
                 const { latitude, longitude } = pos.coords;
                 map.setView([latitude, longitude], 15); 
-                const tempMarker = L.marker([latitude, longitude]).addTo(map)
-                 .bindPopup('현재 위치').openPopup();
-                setTimeout(() => { if(tempMarker) map.removeLayer(tempMarker); }, 4000);
+                
+                const pulseIcon = L.divIcon({
+                    html: `<div style="position: relative;">
+                        <div style="position: absolute; width: 60px; height: 60px; background: rgba(91, 99, 245, 0.2); border-radius: 50%; top: -22px; left: -22px; animation: pulse 2s ease-out infinite;"></div>
+                        <div style="width: 16px; height: 16px; background: #5B63F5; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>
+                    </div>`,
+                    className: 'current-location-marker',
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8]
+                });
+                
+                const tempMarker = L.marker([latitude, longitude], { icon: pulseIcon }).addTo(map)
+                    .bindPopup('현재 위치').openPopup();
+                
+                setTimeout(() => { 
+                    if(tempMarker) map.removeLayer(tempMarker); 
+                    button.innerHTML = '<i class="fas fa-crosshairs"></i>';
+                }, 5000);
+                
+                showNotification('현재 위치로 이동했습니다.', 'success');
             }, () => {
-                alert('현재 위치를 가져올 수 없습니다. 브라우저의 위치 정보 접근을 허용해주세요.');
+                button.innerHTML = '<i class="fas fa-crosshairs"></i>';
+                showNotification('위치 정보 접근이 거부되었습니다.', 'error');
             }, { enableHighAccuracy: true });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            navigator.geolocation.getCurrentPosition(pos => {
-                const { latitude, longitude } = pos.coords;
-                map.setView([latitude, longitude], 13);
-                fetchWeather(latitude, longitude);
-            }, () => { fetchWeather(37.5665, 126.9780); });
-            
-            loadHistory();
-            
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.nav-tab, .tab-content').forEach(el => el.classList.remove('active'));
-                    tab.classList.add('active');
-                    document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
-                    
-                    [...favoriteMarkers, ...nearbyMarkers].forEach(m => map.removeLayer(m));
-                    favoriteMarkers = []; 
-                    nearbyMarkers = [];
-                    
-                    if (tab.dataset.tab !== 'route' || document.getElementById('results').style.display === 'none') {
-                        document.querySelector('.main-container').classList.remove('map-enlarged');
-                        setTimeout(() => map.invalidateSize(), 310);
-                    }
-
-                    if (tab.dataset.tab === 'favorites') loadFavorites();
-                    if (tab.dataset.tab === 'history') loadHistory();
-                    if (tab.dataset.tab === 'nearby') document.getElementById('nearby-results').innerHTML = '';
-                });
-            });
-
-            document.querySelectorAll('.transport-mode, .route-option').forEach(el => {
-                el.addEventListener('click', () => {
-                    const group = el.classList.contains('transport-mode') ? '.transport-mode' : '.route-option';
-                    document.querySelectorAll(group).forEach(o => o.classList.remove('active'));
-                    el.classList.add('active');
-                });
-            });
-
-            const resizer = document.getElementById('resizer');
-            const mapContainer = document.querySelector('.map-container');
-            const sidebar = document.querySelector('.sidebar');
-            let isResizing = false;
-
-            const startResizing = (e) => {
-                if (window.getComputedStyle(resizer).display === 'none') return;
-                isResizing = true;
-                document.body.style.cursor = 'ns-resize';
-                map.dragging.disable();
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('touchmove', handleMouseMove);
-                document.addEventListener('mouseup', stopResizing);
-                document.addEventListener('touchend', stopResizing);
-            };
-
-            const handleMouseMove = (e) => {
-                if (!isResizing) return;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                const mainContainer = document.querySelector('.main-container');
-                const containerHeight = mainContainer.offsetHeight;
-                const newMapHeight = clientY;
-                const newSidebarHeight = containerHeight - newMapHeight - resizer.offsetHeight;
-
-                const mapMinHeight = parseFloat(window.getComputedStyle(mapContainer).minHeight);
-                const sidebarMinHeight = parseFloat(window.getComputedStyle(sidebar).minHeight);
-                
-                if (newMapHeight >= mapMinHeight && newSidebarHeight >= sidebarMinHeight) {
-                    mapContainer.style.height = `${newMapHeight}px`;
-                    sidebar.style.height = `${newSidebarHeight}px`;
-                    map.invalidateSize();
-                }
-            };
-            
-            const stopResizing = () => {
-                isResizing = false;
-                document.body.style.cursor = 'default';
-                map.dragging.enable();
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('touchmove', handleMouseMove);
-                document.removeEventListener('mouseup', stopResizing);
-                document.removeEventListener('touchend', stopResizing);
-            };
-            
-            resizer.addEventListener('mousedown', startResizing);
-            resizer.addEventListener('touchstart', startResizing);
-        });
-
-        const fetchWeather = async (lat, lon) => {
+        // Weather functions
+        async function fetchWeather(lat, lon) {
             try {
                 const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
                 const data = await res.json();
@@ -1409,8 +2505,12 @@
                 document.querySelector('.weather-temp').textContent = `${Math.round(weather.temperature)}°C`;
                 document.querySelector('.weather-desc').textContent = text;
                 document.getElementById('weather-icon').className = `fas ${icon}`;
-            } catch (err) { console.error('Weather fetch error:', err); }
-        };
+            } catch (err) { 
+                console.error('Weather fetch error:', err); 
+                document.querySelector('.weather-desc').textContent = '날씨 정보 없음';
+                document.getElementById('weather-icon').className = 'fas fa-question-circle';
+            }
+        }
 
         function mapWeatherCode(code) {
             if (code === 0) return { text: "맑음", icon: "fa-sun" };
@@ -1423,16 +2523,32 @@
             return { text: "알 수 없음", icon: "fa-question-circle" };
         }
 
+        // Utility functions
         function swapLocations() {
-            [document.getElementById('from').value, document.getElementById('to').value] = 
-            [document.getElementById('to').value, document.getElementById('from').value];
+            const fromInput = document.getElementById('from');
+            const toInput = document.getElementById('to');
+            [fromInput.value, toInput.value] = [toInput.value, fromInput.value];
             [selectedStart, selectedEnd] = [selectedEnd, selectedStart];
+            
+            // Animate the swap
+            fromInput.style.transition = 'all 0.3s ease';
+            toInput.style.transition = 'all 0.3s ease';
+            fromInput.style.transform = 'translateY(20px)';
+            toInput.style.transform = 'translateY(-20px)';
+            
+            setTimeout(() => {
+                fromInput.style.transform = '';
+                toInput.style.transform = '';
+            }, 300);
         }
 
         function setQuickLocation(loc) {
             document.getElementById('to').value = loc;
+            selectedEnd = null;
+            document.getElementById('to').focus();
         }
-        
+
+        // History functions
         function saveToHistory(from, to) {
             let history = JSON.parse(localStorage.getItem('navHistory') || '[]');
             history.unshift({ from, to, date: new Date().toISOString().split('T')[0] });
@@ -1448,14 +2564,27 @@
             if (!list) return;
             list.innerHTML = '';
             const history = JSON.parse(localStorage.getItem('navHistory') || '[]');
+            
+            if (history.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding: 40px; color: #6C757D;"><i class="fas fa-history fa-3x" style="margin-bottom: 16px;"></i><p>검색 기록이 없습니다.</p></div>';
+                return;
+            }
+            
             history.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'history-item';
-                div.innerHTML = `<div class="history-info" onclick="setHistoryLocation('${item.from.replace(/'/g, "\\'")}', '${item.to.replace(/'/g, "\\'")}')"><div class="history-route">${item.from} → ${item.to}</div><div class="history-date">${item.date}</div></div><div class="favorite-actions"><button onclick="deleteHistory(event, ${index})"><i class="fas fa-trash"></i></button></div>`;
+                div.innerHTML = `
+                    <div class="history-info" onclick="setHistoryLocation('${item.from.replace(/'/g, "\\'")}', '${item.to.replace(/'/g, "\\'")}')">
+                        <div class="history-route">${item.from} → ${item.to}</div>
+                        <div class="history-date">${item.date}</div>
+                    </div>
+                    <div class="favorite-actions">
+                        <button onclick="deleteHistory(event, ${index})"><i class="fas fa-trash"></i></button>
+                    </div>`;
                 list.appendChild(div);
             });
         }
-        
+
         function setHistoryLocation(from, to) {
             document.querySelector('.nav-tab[data-tab="route"]').click();
             document.getElementById('from').value = from;
@@ -1470,29 +2599,37 @@
             history.splice(index, 1);
             localStorage.setItem('navHistory', JSON.stringify(history));
             loadHistory();
+            showNotification('기록이 삭제되었습니다.', 'success');
         }
 
+        // Favorites functions
         function getFavorites() { return JSON.parse(localStorage.getItem('favorites') || '[]'); }
         function saveFavorites(favorites) { localStorage.setItem('favorites', JSON.stringify(favorites)); }
 
         function addToFavorites() {
-            if (!selectedEnd) { alert("먼저 경로를 검색해주세요."); return; }
-            const name = prompt('즐겨찾기 이름 입력:', selectedEnd.display_name.split(',')[0]);
+            if (!selectedEnd) { 
+                showNotification('먼저 경로를 검색해주세요.', 'warning'); 
+                return; 
+            }
+            const name = prompt('즐겨찾기 이름을 입력하세요:', selectedEnd.display_name.split(',')[0]);
             if (name) {
                 const favorites = getFavorites();
                 favorites.push({ name, address: selectedEnd.display_name, lat: selectedEnd.lat, lon: selectedEnd.lon });
                 saveFavorites(favorites);
-                alert('즐겨찾기에 추가되었습니다.');
+                showNotification('즐겨찾기에 추가되었습니다!', 'success');
             }
         }
-        
+
         async function addCustomFavorite() {
             const name = document.getElementById('favorite-name').value.trim();
             const address = document.getElementById('favorite-address').value.trim();
-            if (!name || !address) { alert('이름과 주소를 모두 입력하세요.'); return; }
+            if (!name || !address) { 
+                showNotification('이름과 주소를 모두 입력하세요.', 'warning'); 
+                return; 
+            }
             const places = await geocode(address);
             if (places) {
-                const place = await showLocationPicker(places, '즐겨찾기 위치 확인');
+                const place = places.length > 1 ? await showLocationPicker(places, '즐겨찾기 위치 확인') : places[0];
                 if (place) {
                     const favorites = getFavorites();
                     favorites.push({ name, address: place.display_name, lat: place.lat, lon: place.lon });
@@ -1500,28 +2637,53 @@
                     document.getElementById('favorite-name').value = '';
                     document.getElementById('favorite-address').value = '';
                     loadFavorites();
+                    showNotification('즐겨찾기에 추가되었습니다!', 'success');
                 }
-            } else { alert('주소를 찾을 수 없습니다.'); }
+            } else { 
+                showNotification('주소를 찾을 수 없습니다.', 'error'); 
+            }
         }
-        
+
         function loadFavorites() {
             const list = document.getElementById('favorites-list');
             list.innerHTML = '';
             favoriteMarkers.forEach(m => map.removeLayer(m));
             favoriteMarkers = [];
             const favorites = getFavorites();
-            if(favorites.length === 0) return;
+            
+            if(favorites.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding: 40px; color: #6C757D;"><i class="fas fa-star fa-3x" style="margin-bottom: 16px;"></i><p>저장된 즐겨찾기가 없습니다.</p></div>';
+                return;
+            }
 
             favorites.forEach((fav, index) => {
                 const div = document.createElement('div');
                 div.className = 'favorite-item';
-                div.innerHTML = `<div class="favorite-info" onclick="showDestinationSelectModal('${fav.name.replace(/'/g, "\\'")}', '${fav.address.replace(/'/g, "\\'")}', ${fav.lat}, ${fav.lon})"><div class="favorite-name">${fav.name}</div><div class="favorite-address">${fav.address}</div></div><div class="favorite-actions"><button onclick="deleteFavorite(event, ${index})"><i class="fas fa-trash"></i></button></div>`;
+                div.innerHTML = `
+                    <div class="favorite-info" onclick="showDestinationSelectModal('${fav.name.replace(/'/g, "\\'")}', '${fav.address.replace(/'/g, "\\'")}', ${fav.lat}, ${fav.lon})">
+                        <div class="favorite-name">${fav.name}</div>
+                        <div class="favorite-address">${fav.address}</div>
+                    </div>
+                    <div class="favorite-actions">
+                        <button onclick="deleteFavorite(event, ${index})"><i class="fas fa-trash"></i></button>
+                    </div>`;
                 list.appendChild(div);
-                const marker = L.marker([fav.lat, fav.lon]).addTo(map)
+                
+                const marker = L.marker([fav.lat, fav.lon], {
+                    icon: L.divIcon({
+                        html: '<i class="fas fa-star" style="color: #FFD93D; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);"></i>',
+                        className: 'favorite-marker',
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 24]
+                    })
+                }).addTo(map)
                     .bindPopup(`<b>${fav.name}</b><br>${fav.address}`);
                 favoriteMarkers.push(marker);
             });
-            map.fitBounds(L.featureGroup(favoriteMarkers).getBounds().pad(0.2));
+            
+            if (favoriteMarkers.length > 0) {
+                map.fitBounds(L.featureGroup(favoriteMarkers).getBounds().pad(0.2));
+            }
         }
 
         function deleteFavorite(event, index) {
@@ -1530,8 +2692,10 @@
             favorites.splice(index, 1);
             saveFavorites(favorites);
             loadFavorites();
+            showNotification('즐겨찾기가 삭제되었습니다.', 'success');
         }
-        
+
+        // Destination selection modal
         const destinationSelectModal = document.getElementById('destination-select-modal');
         const destinationSelectTitle = document.getElementById('destination-select-title');
         const destinationSelectAddress = document.getElementById('destination-select-address');
@@ -1549,25 +2713,250 @@
             document.querySelector('.nav-tab[data-tab="route"]').click();
             if (type === 'start') {
                 document.getElementById('from').value = pendingDestinationSelection.address;
-                selectedStart = { display_name: pendingDestinationSelection.address, lat: pendingDestinationSelection.lat, lon: pendingDestinationSelection.lon };
+                selectedStart = { 
+                    display_name: pendingDestinationSelection.address, 
+                    lat: pendingDestinationSelection.lat, 
+                    lon: pendingDestinationSelection.lon 
+                };
             } else if (type === 'end') {
                 document.getElementById('to').value = pendingDestinationSelection.address;
-                selectedEnd = { display_name: pendingDestinationSelection.address, lat: pendingDestinationSelection.lat, lon: pendingDestinationSelection.lon };
+                selectedEnd = { 
+                    display_name: pendingDestinationSelection.address, 
+                    lat: pendingDestinationSelection.lat, 
+                    lon: pendingDestinationSelection.lon 
+                };
             }
             closeDestinationSelectModal();
+            showNotification(`${type === 'start' ? '출발지' : '도착지'}로 설정되었습니다.`, 'success');
         }
 
         function closeDestinationSelectModal() {
             destinationSelectModal.style.display = 'none';
             pendingDestinationSelection = null;
         }
-        
+
+        // Map enlargement for mobile
         function enlargeMap() {
             if(window.innerWidth <= 768) {
                 document.querySelector('.main-container').classList.add('map-enlarged');
                 setTimeout(() => map.invalidateSize(), 310);
             }
         }
+
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 16px 24px;
+                background: ${type === 'success' ? '#51CF66' : type === 'error' ? '#FF6B6B' : type === 'warning' ? '#FFD93D' : '#5B63F5'};
+                color: ${type === 'warning' ? '#2D3436' : 'white'};
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+                font-weight: 500;
+                z-index: 3000;
+                animation: slideInRight 0.3s ease-out;
+                max-width: 320px;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+            @keyframes pulse {
+                0% { transform: scale(0.95); opacity: 1; }
+                70% { transform: scale(1.3); opacity: 0.3; }
+                100% { transform: scale(1.5); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load saved dark mode preference
+            const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (savedDarkMode) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('night-mode-toggle').classList.add('active');
+                map.removeLayer(currentBaseLayer);
+                currentBaseLayer = darkLayer;
+                currentBaseLayer.addTo(map);
+            }
+
+            // Get current location and weather
+            navigator.geolocation.getCurrentPosition(pos => {
+                const { latitude, longitude } = pos.coords;
+                map.setView([latitude, longitude], 13);
+                fetchWeather(latitude, longitude);
+                showNotification('현재 위치를 찾았습니다!', 'success');
+            }, () => { 
+                fetchWeather(37.5665, 126.9780); 
+            });
+            
+            // Load history on start
+            loadHistory();
+            
+            // Tab navigation
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-tab, .tab-content').forEach(el => el.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+                    
+                    // Clear markers when switching tabs
+                    [...favoriteMarkers, ...nearbyMarkers].forEach(m => map.removeLayer(m));
+                    favoriteMarkers = []; 
+                    nearbyMarkers = [];
+                    
+                    // Reset map size for mobile
+                    if (tab.dataset.tab !== 'route' || document.getElementById('results').style.display === 'none') {
+                        document.querySelector('.main-container').classList.remove('map-enlarged');
+                        setTimeout(() => map.invalidateSize(), 310);
+                    }
+
+                    // Load content for specific tabs
+                    if (tab.dataset.tab === 'favorites') loadFavorites();
+                    if (tab.dataset.tab === 'history') loadHistory();
+                    if (tab.dataset.tab === 'nearby') document.getElementById('nearby-results').innerHTML = '';
+                });
+            });
+
+            // Transport mode and route option selection
+            document.querySelectorAll('.transport-mode, .route-option').forEach(el => {
+                el.addEventListener('click', () => {
+                    const group = el.classList.contains('transport-mode') ? '.transport-mode' : '.route-option';
+                    document.querySelectorAll(group).forEach(o => o.classList.remove('active'));
+                    el.classList.add('active');
+                });
+            });
+
+            // Mobile resizer functionality
+            const resizer = document.getElementById('resizer');
+            const mapContainer = document.querySelector('.map-container');
+            const sidebar = document.querySelector('.sidebar');
+            let isResizing = false;
+            let startY = 0;
+            let startMapHeight = 0;
+
+            const startResizing = (e) => {
+                if (window.innerWidth > 768) return;
+                isResizing = true;
+                startY = e.touches ? e.touches[0].clientY : e.clientY;
+                startMapHeight = mapContainer.offsetHeight;
+                document.body.style.cursor = 'ns-resize';
+                map.dragging.disable();
+                e.preventDefault();
+            };
+
+            const handleResize = (e) => {
+                if (!isResizing) return;
+                const currentY = e.touches ? e.touches[0].clientY : e.clientY;
+                const diff = currentY - startY;
+                const newMapHeight = startMapHeight + diff;
+                const containerHeight = window.innerHeight;
+                
+                // Set limits (20% - 80% of viewport)
+                const minHeight = containerHeight * 0.2;
+                const maxHeight = containerHeight * 0.8;
+                
+                if (newMapHeight >= minHeight && newMapHeight <= maxHeight) {
+                    mapContainer.style.height = `${newMapHeight}px`;
+                    sidebar.style.height = `${containerHeight - newMapHeight}px`;
+                    map.invalidateSize();
+                }
+            };
+
+            const stopResizing = () => {
+                if (!isResizing) return;
+                isResizing = false;
+                document.body.style.cursor = 'default';
+                map.dragging.enable();
+            };
+
+            resizer.addEventListener('mousedown', startResizing);
+            resizer.addEventListener('touchstart', startResizing);
+            document.addEventListener('mousemove', handleResize);
+            document.addEventListener('touchmove', handleResize);
+            document.addEventListener('mouseup', stopResizing);
+            document.addEventListener('touchend', stopResizing);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Ctrl/Cmd + K for quick search
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    document.querySelector('.nav-tab[data-tab="route"]').click();
+                    document.getElementById('to').focus();
+                }
+                // Escape to close modals
+                if (e.key === 'Escape') {
+                    closeModal();
+                    closeDestinationSelectModal();
+                }
+            });
+
+            // Auto-save form data
+            ['from', 'to'].forEach(id => {
+                const input = document.getElementById(id);
+                input.addEventListener('input', () => {
+                    sessionStorage.setItem(`nav-${id}`, input.value);
+                });
+                const saved = sessionStorage.getItem(`nav-${id}`);
+                if (saved) input.value = saved;
+            });
+
+            // Add touch feedback for mobile
+            document.querySelectorAll('button, .transport-mode, .route-option, .nearby-category, .location-tag').forEach(el => {
+                el.addEventListener('touchstart', () => {
+                    el.style.transform = 'scale(0.95)';
+                });
+                el.addEventListener('touchend', () => {
+                    setTimeout(() => {
+                        el.style.transform = '';
+                    }, 100);
+                });
+            });
+
+            // Smooth scroll for mobile
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.style.scrollBehavior = 'smooth';
+                });
+            }
+        });
+
+        // Handle window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                map.invalidateSize();
+                // Reset mobile layout if switching to desktop
+                if (window.innerWidth > 768) {
+                    document.querySelector('.map-container').style.height = '';
+                    document.querySelector('.sidebar').style.height = '';
+                    document.querySelector('.main-container').classList.remove('map-enlarged');
+                }
+            }, 250);
+        });
     </script>
 </body>
 </html>
